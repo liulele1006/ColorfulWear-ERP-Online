@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ColorfulWear ERP 进出货管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background:#f9f9f9; }
+    header { background:#3498db; color:#fff; padding:1rem; text-align:center; }
+    main { max-width:1000px; margin:1rem auto; padding:1rem; background:#fff; border-radius:8px; box-shadow:0 0 8px rgba(0,0,0,0.1);}
+    h2 { margin-top:1rem; }
+    label { display:block; margin-top:0.5rem; }
+    input, select { width:100%; padding:0.5rem; margin-top:0.2rem; box-sizing:border-box; }
+    button { padding:0.5rem 1rem; margin-top:1rem; background:#3498db; color:#fff; border:none; border-radius:4px; cursor:pointer;}
+    table { width:100%; border-collapse:collapse; margin-top:1rem; }
+    th, td { border:1px solid #ddd; padding:0.5rem; text-align:center; font-size:0.9rem;}
+    @media(max-width:600px){
+      table, thead, tbody, th, td, tr { display:block; }
+      th { display:none; }
+      td { display:flex; justify-content:space-between; padding:0.5rem; border:none; border-bottom:1px solid #ddd; }
+      td::before { content: attr(data-label); font-weight:bold; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ColorfulWear ERP 进出货管理</h1>
+</header>
+
+<main>
+  <h2>新增记录</h2>
+  <form id="entryForm">
+    <label>客户名称<input type="text" id="customer_name" required></label>
+    <label>进出货管理
+      <select id="movement_type" required>
+        <option value="IN">入库</option>
+        <option value="OUT">出库</option>
+      </select>
+    </label>
+    <label>日期<input type="date" id="date" required></label>
+    <label>版型<input type="text" id="style"></label>
+    <label>底版颜色<input type="text" id="base_color"></label>
+    <label>花型<input type="text" id="pattern"></label>
+    <label>码数<input type="text" id="size"></label>
+    <label>数量（件）<input type="number" id="quantity" min="0" required></label>
+    <label>单价<input type="number" id="unit_price" min="0" required></label>
+    <label>总价<input type="number" id="total_price" readonly></label>
+    <label>备注<input type="text" id="note"></label>
+    <button type="submit">保存记录</button>
+  </form>
+
+  <h2>库存记录</h2>
+  <button id="exportCSV">导出 CSV</button>
+  <table id="recordsTable">
+    <thead>
+      <tr>
+        <th>客户名称</th>
+        <th>进出货</th>
+        <th>日期</th>
+        <th>版型</th>
+        <th>底版颜色</th>
+        <th>花型</th>
+        <th>码数</th>
+        <th>数量</th>
+        <th>单价</th>
+        <th>总价</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<script>
+  // ⚡ 直接使用你提供的 Supabase 配置
+  const SUPABASE_URL = "https://oqwburiadlzlussbslbn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xd2J1cmlhZGx6bHVzc2JzbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTkzMTEsImV4cCI6MjA3Nzg5NTMxMX0.zUglY95hzH-qIvwqaMYkxrJVTYhaj040GfmrL6pYPms";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const form = document.getElementById("entryForm");
+  const recordsTable = document.getElementById("recordsTable").querySelector("tbody");
+  const quantityInput = document.getElementById("quantity");
+  const unitPriceInput = document.getElementById("unit_price");
+  const totalPriceInput = document.getElementById("total_price");
+
+  // 自动计算总价
+  function updateTotal() {
+    const q = Number(quantityInput.value) || 0;
+    const p = Number(unitPriceInput.value) || 0;
+    totalPriceInput.value = (q * p).toFixed(2);
+  }
+  quantityInput.addEventListener("input", updateTotal);
+  unitPriceInput.addEventListener("input", updateTotal);
+
+  // 拉取库存记录
+  async function fetchRecords() {
+    const { data, error } = await supabaseClient
+      .from('inventory_movements')
+      .select('*')
+      .order('date', { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    recordsTable.innerHTML = "";
+    data.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td data-label="客户名称">${r.customer_name}</td>
+        <td data-label="进出货">${r.movement_type}</td>
+        <td data-label="日期">${r.date}</td>
+        <td data-label="版型">${r.style || ''}</td>
+        <td data-label="底版颜色">${r.base_color || ''}</td>
+        <td data-label="花型">${r.pattern || ''}</td>
+        <td data-label="码数">${r.size || ''}</td>
+        <td data-label="数量">${r.quantity}</td>
+        <td data-label="单价">${r.unit_price}</td>
+        <td data-label="总价">${r.total_price}</td>
+        <td data-label="备注">${r.note || ''}</td>
+      `;
+      recordsTable.appendChild(tr);
+    });
+  }
+
+  // 保存记录
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const record = {
+      customer_name: document.getElementById("customer_name").value,
+      movement_type: document.getElementById("movement_type").value,
+      date: document.getElementById("date").value,
+      style: document.getElementById("style").value,
+      base_color: document.getElementById("base_color").value,
+      pattern: document.getElementById("pattern").value,
+      size: document.getElementById("size").value,
+      quantity: Number(document.getElementById("quantity").value),
+      unit_price: Number(document.getElementById("unit_price").value),
+      total_price: Number(document.getElementById("total_price").value),
+      note: document.getElementById("note").value
+    };
+    const { data, error } = await supabaseClient.from('inventory_movements').insert([record]);
+    if (error) {
+      alert("保存失败");
+      console.error(error);
+      return;
+    }
+    form.reset();
+    totalPriceInput.value = "";
+    fetchRecords(); // 保存后刷新表格
+  });
+
+  // 导出 CSV
+  document.getElementById("exportCSV").addEventListener("click", () => {
+    let csv = '客户名称,进出货,日期,版型,底版颜色,花型,码数,数量,单价,总价,备注\n';
+    Array.from(recordsTable.querySelectorAll("tr")).forEach(tr => {
+      const row = Array.from(tr.querySelectorAll("td")).map(td => `"${td.innerText}"`).join(",");
+      csv += row + "\n";
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "库存记录.csv"; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // 页面加载时拉取数据
+  fetchRecords();
+</script>
+
+</body>
+</html>
