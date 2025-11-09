@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>七彩虹数码印花</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Header Section -->
+  <header class="bg-blue-600 text-white py-6">
+    <div class="container mx-auto text-center">
+      <h1 class="text-3xl font-bold">七彩虹数码印花/ColorfulWear-进出货管理系统</h1>
+    </div>
+  </header>
+
+  <main class="container mx-auto my-10 p-6 bg-white rounded-xl shadow-lg">
+
+    <!-- 新增进出货记录 -->
+    <section class="space-y-6" id="inventoryFormSection">
+      <h2 class="text-2xl font-semibold text-blue-600">新增进出货记录</h2>
+      <form id="entryForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="customer_name" class="block text-sm font-medium">客户名称</label>
+            <input list="customerNameOptions" type="text" id="customer_name" required
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="customerNameOptions"></datalist>
+          </div>
+          <div>
+            <label for="movement_type" class="block text-sm font-medium">进出货管理</label>
+            <select id="movement_type" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="IN">入库</option>
+              <option value="OUT">出库</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="date" class="block text-sm font-medium">日期</label>
+            <input type="date" id="date" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="style" class="block text-sm font-medium">版型</label>
+            <input list="styleOptions" type="text" id="style"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="styleOptions"></datalist>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="base_color" class="block text-sm font-medium">底版颜色</label>
+            <input list="baseColorOptions" type="text" id="base_color"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="baseColorOptions"></datalist>
+          </div>
+          <div>
+            <label for="pattern" class="block text-sm font-medium">花型</label>
+            <input list="patternOptions" type="text" id="pattern"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="patternOptions"></datalist>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="size" class="block text-sm font-medium">码数</label>
+            <input list="sizeOptions" type="text" id="size"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="sizeOptions"></datalist>
+          </div>
+          <div>
+            <label for="quantity" class="block text-sm font-medium">数量（件）</label>
+            <input type="number" id="quantity" min="0" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="unit_price" class="block text-sm font-medium">单价</label>
+            <input type="number" id="unit_price" min="0" step="0.01" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="total_price" class="block text-sm font-medium">总价</label>
+            <input type="number" id="total_price" readonly step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div>
+          <label for="note" class="block text-sm font-medium">备注</label>
+          <input list="noteOptions" type="text" id="note"
+                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <datalist id="noteOptions"></datalist>
+        </div>
+
+        <button type="submit" class="mt-4 w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">保存记录</button>
+      </form>
+    </section>
+
+    <!-- 报表统计 -->
+    <section class="mt-10" id="reportSection">
+      <h2 class="text-2xl font-semibold text-blue-600">报表统计</h2>
+      <form id="reportForm" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="reportCustomer" class="block text-sm font-medium">客户筛选</label>
+            <input list="customerOptions" type="text" id="reportCustomer" placeholder="可选" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="customerOptions"></datalist>
+          </div>
+          <div>
+            <label for="reportStartDate" class="block text-sm font-medium">开始日期</label>
+            <input type="date" id="reportStartDate" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="reportEndDate" class="block text-sm font-medium">结束日期</label>
+            <input type="date" id="reportEndDate" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="mt-4">
+          <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">生成报表</button>
+        </div>
+      </form>
+      <div id="reportSummary" class="mt-4 hidden p-4 bg-gray-100 rounded-md">
+        <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
+        <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
+      </div>
+      <table id="reportTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md hidden">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th>客户名称</th><th>进出货</th><th>日期</th><th>版型</th><th>底版颜色</th>
+            <th>花型</th><th>码数</th><th>数量</th><th>单价</th><th>总价</th><th>备注</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- 导出 CSV -->
+    <section class="mt-10">
+      <h2 class="text-2xl font-semibold text-blue-600">导出数据</h2>
+      <button id="exportCSVBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">导出 CSV</button>
+    </section>
+
+    <!-- 库存记录 -->
+    <section class="mt-10" id="inventoryRecordsSection">
+      <h2 class="text-2xl font-semibold text-blue-600">库存记录</h2>
+      <table id="recordsTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th>客户名称</th><th>进出货</th><th>日期</th><th>版型</th><th>底版颜色</th>
+            <th>花型</th><th>码数</th><th>数量</th><th>单价</th><th>总价</th><th>备注</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- 编辑弹窗 -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+      <div class="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto relative">
+        <h2 class="text-xl font-semibold mb-4 sticky top-0 bg-white py-2">编辑记录</h2>
+        <form id="editForm" class="space-y-4">
+          <div>
+            <label for="edit_customer_name" class="block text-sm font-medium">客户名称</label>
+            <input list="customerNameOptionsEdit" type="text" id="edit_customer_name" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="customerNameOptionsEdit"></datalist>
+          </div>
+          <div>
+            <label for="edit_movement_type" class="block text-sm font-medium">进出货管理</label>
+            <select id="edit_movement_type" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="IN">入库</option>
+              <option value="OUT">出库</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit_date" class="block text-sm font-medium">日期</label>
+            <input type="date" id="edit_date" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="edit_style" class="block text-sm font-medium">版型</label>
+            <input list="styleOptionsEdit" type="text" id="edit_style" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="styleOptionsEdit"></datalist>
+          </div>
+          <div>
+            <label for="edit_base_color" class="block text-sm font-medium">底版颜色</label>
+            <input list="baseColorOptionsEdit" type="text" id="edit_base_color" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="baseColorOptionsEdit"></datalist>
+          </div>
+          <div>
+            <label for="edit_pattern" class="block text-sm font-medium">花型</label>
+            <input list="patternOptionsEdit" type="text" id="edit_pattern" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="patternOptionsEdit"></datalist>
+          </div>
+          <div>
+            <label for="edit_size" class="block text-sm font-medium">码数</label>
+            <input list="sizeOptionsEdit" type="text" id="edit_size" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="sizeOptionsEdit"></datalist>
+          </div>
+          <div>
+            <label for="edit_quantity" class="block text-sm font-medium">数量（件）</label>
+            <input type="number" id="edit_quantity" min="0" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="edit_unit_price" class="block text-sm font-medium">单价</label>
+            <input type="number" id="edit_unit_price" min="0" step="0.01" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="edit_total_price" class="block text-sm font-medium">总价</label>
+            <input type="number" id="edit_total_price" readonly step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="edit_note" class="block text-sm font-medium">备注</label>
+            <input list="noteOptionsEdit" type="text" id="edit_note" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <datalist id="noteOptionsEdit"></datalist>
+          </div>
+          <div class="flex justify-end mt-4 sticky bottom-0 bg-white py-2">
+            <button type="button" id="cancelEdit" class="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">取消</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">更新</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://oqwburiadlzlussbslbn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xd2J1cmlhZGx6bHVzc2JzbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTkzMTEsImV4cCI6MjA3Nzg5NTMxMX0.zUglY95hzH-qIvwqaMYkxrJVTYhaj040GfmrL6pYPms";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentEditId = null;
+    let currentData = [];
+    let loadOptionsFunc = null;
+    let refreshReportFunc = null;
+    const PASSWORD = "106614";
+
+    // 工具函数：加载前10个不同值到 datalist
+    async function loadDatalistOptions(field, inputId, datalistId) {
+      const {data,error} = await supabaseClient.from('inventory_movements').select(field).order(field,{ascending:true}).limit(100);
+      if(error){console.error(error); return;}
+      const uniqueValues = Array.from(new Set(data.map(d=>d[field]).filter(v=>v))).slice(0,10);
+      const datalist = document.getElementById(datalistId);
+      datalist.innerHTML = '';
+      uniqueValues.forEach(v=>{
+        const opt = document.createElement('option');
+        opt.value=v;
+        datalist.appendChild(opt);
+      });
+    }
+
+    function mainInventoryForm(fetchRecords) {
+      const form = document.getElementById("entryForm");
+      const quantityInput = document.getElementById("quantity");
+      const unitPriceInput = document.getElementById("unit_price");
+      const totalPriceInput = document.getElementById("total_price");
+
+      function updateTotal() {
+        const q = Number(quantityInput.value)||0;
+        const p = Number(unitPriceInput.value)||0;
+        totalPriceInput.value = (q*p).toFixed(2);
+      }
+
+      quantityInput.addEventListener("input", updateTotal);
+      unitPriceInput.addEventListener("input", updateTotal);
+
+      form.addEventListener("submit", async e=>{
+        e.preventDefault();
+        const record = {
+          customer_name: document.getElementById("customer_name").value,
+          movement_type: document.getElementById("movement_type").value,
+          date: document.getElementById("date").value,
+          style: document.getElementById("style").value,
+          base_color: document.getElementById("base_color").value,
+          pattern: document.getElementById("pattern").value,
+          size: document.getElementById("size").value,
+          quantity: Number(document.getElementById("quantity").value),
+          unit_price: Number(document.getElementById("unit_price").value),
+          total_price: Number(document.getElementById("total_price").value),
+          note: document.getElementById("note").value
+        };
+        const {error} = await supabaseClient.from('inventory_movements').insert([record]);
+        if(error){alert("保存失败");console.error(error);return;}
+        alert("记录保存成功！");
+        form.reset(); totalPriceInput.value="";
+        if(fetchRecords) fetchRecords();
+        if(loadOptionsFunc) loadOptionsFunc();
+        if(refreshReportFunc) refreshReportFunc();
+      });
+    }
+
+    function mainInventoryRecords() {
+      const recordsTable = document.getElementById("recordsTable").querySelector("tbody");
+
+      async function fetchRecords() {
+        const {data,error} = await supabaseClient.from('inventory_movements').select('*').order('date',{ascending:false});
+        if(error){console.error(error); return;}
+        currentData = data;
+        recordsTable.innerHTML="";
+        data.forEach(r=>{
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${r.customer_name}</td><td>${r.movement_type}</td><td>${r.date}</td>
+                          <td>${r.style||''}</td><td>${r.base_color||''}</td><td>${r.pattern||''}</td>
+                          <td>${r.size||''}</td><td>${r.quantity}</td><td>${r.unit_price}</td>
+                          <td>${r.total_price}</td><td>${r.note||''}</td>
+                          <td><button class="edit-btn text-blue-500" data-id="${r.id}">编辑</button>
+                              <button class="delete-btn text-red-500 ml-2" data-id="${r.id}">删除</button></td>`;
+          recordsTable.appendChild(tr);
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(btn=>btn.addEventListener('click',async e=>{
+          const pwd = prompt("请输入密码进行编辑：");
+          if(pwd !== PASSWORD){alert("密码错误"); return;}
+          openEditModal(e.target.dataset.id);
+        }));
+
+        document.querySelectorAll('.delete-btn').forEach(btn=>btn.addEventListener('click',async e=>{
+          const pwd = prompt("请输入密码进行删除：");
+          if(pwd !== PASSWORD){alert("密码错误"); return;}
+          deleteRecord(e.target.dataset.id);
+        }));
+      }
+
+      async function deleteRecord(id){
+        if(!confirm("确定要删除吗？")) return;
+        const {error} = await supabaseClient.from('inventory_movements').delete().eq('id',id);
+        if(error){alert("删除失败");console.error(error);return;}
+        await fetchRecords();
+        if(loadOptionsFunc) loadOptionsFunc();
+        if(refreshReportFunc) refreshReportFunc();
+      }
+
+      function openEditModal(id){
+        currentEditId = id;
+        const record = currentData.find(r=>r.id==id);
+        if(!record) return;
+        document.getElementById("edit_customer_name").value=record.customer_name;
+        document.getElementById("edit_movement_type").value=record.movement_type;
+        document.getElementById("edit_date").value=record.date;
+        document.getElementById("edit_style").value=record.style||'';
+        document.getElementById("edit_base_color").value=record.base_color||'';
+        document.getElementById("edit_pattern").value=record.pattern||'';
+        document.getElementById("edit_size").value=record.size||'';
+        document.getElementById("edit_quantity").value=record.quantity;
+        document.getElementById("edit_unit_price").value=record.unit_price;
+        document.getElementById("edit_total_price").value=record.total_price;
+        document.getElementById("edit_note").value=record.note||'';
+        document.getElementById("editModal").classList.remove("hidden");
+      }
+
+      document.getElementById("cancelEdit").addEventListener("click",()=>{document.getElementById("editModal").classList.add("hidden");});
+
+      document.getElementById("edit_quantity").addEventListener("input",updateEditTotal);
+      document.getElementById("edit_unit_price").addEventListener("input",updateEditTotal);
+      function updateEditTotal(){
+        const q = Number(document.getElementById("edit_quantity").value)||0;
+        const p = Number(document.getElementById("edit_unit_price").value)||0;
+        document.getElementById("edit_total_price").value=(q*p).toFixed(2);
+      }
+
+      document.getElementById("editForm").addEventListener("submit",async e=>{
+        e.preventDefault();
+        if(!currentEditId) return;
+        const updated = {
+          customer_name: document.getElementById("edit_customer_name").value,
+          movement_type: document.getElementById("edit_movement_type").value,
+          date: document.getElementById("edit_date").value,
+          style: document.getElementById("edit_style").value,
+          base_color: document.getElementById("edit_base_color").value,
+          pattern: document.getElementById("edit_pattern").value,
+          size: document.getElementById("edit_size").value,
+          quantity: Number(document.getElementById("edit_quantity").value),
+          unit_price: Number(document.getElementById("edit_unit_price").value),
+          total_price: Number(document.getElementById("edit_total_price").value),
+          note: document.getElementById("edit_note").value
+        };
+        const {error} = await supabaseClient.from('inventory_movements').update(updated).eq('id',currentEditId);
+        if(error){alert("更新失败");console.error(error);return;}
+        document.getElementById("editModal").classList.add("hidden");
+        await fetchRecords();
+        if(loadOptionsFunc) loadOptionsFunc();
+        if(refreshReportFunc) refreshReportFunc();
+      });
+
+      fetchRecords();
+      return fetchRecords;
+    }
+
+    function mainReport(){
+      const form = document.getElementById("reportForm");
+      const table = document.getElementById("reportTable");
+      const reportCustomerInput = document.getElementById("reportCustomer");
+      const customerOptions = document.getElementById("customerOptions");
+      const totalQuantityEl = document.getElementById("totalQuantity");
+      const totalAmountEl = document.getElementById("totalAmount");
+      const reportSummary = document.getElementById("reportSummary");
+
+      async function loadCustomerOptions() {
+        const {data,error} = await supabaseClient.from('inventory_movements').select('customer_name').order('customer_name',{ascending:true}).limit(100);
+        if(error){console.error(error); return;}
+        const uniqueCustomers = Array.from(new Set(data.map(d=>d.customer_name))).slice(0,10);
+        customerOptions.innerHTML = '';
+        const allOption = document.createElement('option');
+        allOption.value = "所有客户";
+        customerOptions.appendChild(allOption);
+        uniqueCustomers.forEach(c=>{
+          const opt = document.createElement('option');
+          opt.value = c;
+          customerOptions.appendChild(opt);
+        });
+      }
+      loadCustomerOptions();
+      loadOptionsFunc = async ()=>{
+        await loadCustomerOptions();
+        await loadDatalistOptions('customer_name','customer_name','customerNameOptions');
+        await loadDatalistOptions('customer_name','edit_customer_name','customerNameOptionsEdit');
+        await loadDatalistOptions('style','style','styleOptions');
+        await loadDatalistOptions('style','edit_style','styleOptionsEdit');
+        await loadDatalistOptions('base_color','base_color','baseColorOptions');
+        await loadDatalistOptions('base_color','edit_base_color','baseColorOptionsEdit');
+        await loadDatalistOptions('pattern','pattern','patternOptions');
+        await loadDatalistOptions('pattern','edit_pattern','patternOptionsEdit');
+        await loadDatalistOptions('size','size','sizeOptions');
+        await loadDatalistOptions('size','edit_size','sizeOptionsEdit');
+        await loadDatalistOptions('note','note','noteOptions');
+        await loadDatalistOptions('note','edit_note','noteOptionsEdit');
+      };
+      loadOptionsFunc();
+
+      async function generateReport(){
+        const start = document.getElementById("reportStartDate").value;
+        const end = document.getElementById("reportEndDate").value;
+        let customerFilter = reportCustomerInput.value.trim();
+        if(customerFilter==="所有客户") customerFilter="";
+        let query = supabaseClient.from('inventory_movements').select('*');
+        if(start) query = query.gte('date',start);
+        if(end) query = query.lte('date',end);
+        if(customerFilter) query = query.ilike('customer_name', `%${customerFilter}%`);
+        const {data,error} = await query.order('date',{ascending:false});
+        if(error){console.error(error);return;}
+        const tbody = table.querySelector("tbody");
+        tbody.innerHTML="";
+        let totalQuantity=0, totalAmount=0;
+        data.forEach(r=>{
+          totalQuantity += r.quantity;
+          totalAmount += r.total_price;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${r.customer_name}</td><td>${r.movement_type}</td><td>${r.date}</td>
+                          <td>${r.style||''}</td><td>${r.base_color||''}</td><td>${r.pattern||''}</td>
+                          <td>${r.size||''}</td><td>${r.quantity}</td><td>${r.unit_price}</td>
+                          <td>${r.total_price}</td><td>${r.note||''}</td>`;
+          tbody.appendChild(tr);
+        });
+        totalQuantityEl.textContent = totalQuantity;
+        totalAmountEl.textContent = totalAmount.toFixed(2);
+        reportSummary.classList.remove("hidden");
+        table.classList.remove("hidden");
+      }
+
+      form.addEventListener("submit",e=>{
+        e.preventDefault();
+        generateReport();
+      });
+
+      refreshReportFunc = generateReport;
+    }
+
+    function mainExportModule(){
+      document.getElementById("exportCSVBtn").addEventListener("click",()=>{
+        const rows = currentData;
+        if(!rows || rows.length===0){alert("无数据可导出");return;}
+        let csv = "客户名称,进出货,日期,版型,底版颜色,花型,码数,数量,单价,总价,备注\n";
+        rows.forEach(r=>{
+          csv+=`${r.customer_name},${r.movement_type},${r.date},${r.style||''},${r.base_color||''},${r.pattern||''},${r.size||''},${r.quantity},${r.unit_price},${r.total_price},${r.note||''}\n`;
+        });
+        const blob = new Blob([csv],{type:"text/csv"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download="inventory.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    window.onload = ()=>{
+      const fetchRecords = mainInventoryRecords();
+      mainInventoryForm(fetchRecords);
+      mainReport();
+      mainExportModule();
+    }
+  </script>
+
+</body>
+</html>
