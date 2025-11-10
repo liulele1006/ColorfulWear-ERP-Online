@@ -9,17 +9,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
  <style>
-  /* 鼠标悬停在库存记录行时添加蓝色阴影与放大效果 */
-  #recordsTable tbody tr {
+  /* ==== 鼠标悬停阴影效果（库存记录 + 统计报表通用）==== */
+
+  /* 给库存记录表 (#recordsTable) 和报表表 (#reportTable) 添加统一效果 */
+  #recordsTable tbody tr,
+  #reportTable tbody tr {
     transition: all 0.25s ease-in-out;
   }
 
-  #recordsTable tbody tr:hover {
-    background-color: #e0f2fe; /* 更亮的浅蓝背景 */
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); /* 更深的蓝色阴影 */
+  #recordsTable tbody tr:hover,
+  #reportTable tbody tr:hover {
+    background-color: #e0f2fe; /* 浅蓝背景 */
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); /* 蓝色阴影 */
     transform: scale(1.015);
   }
 </style>
+
 
 
 
