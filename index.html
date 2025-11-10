@@ -148,15 +148,15 @@
         <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
         <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
       </div>
-      <table id="reportTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md hidden">
-        <thead class="bg-blue-600 text-white">
-          <tr>
-            <th>客户名称</th><th>进出货</th><th>日期</th><th>版型</th><th>底版颜色</th>
-            <th>花型</th><th>码数</th><th>数量</th><th>单价</th><th>总价</th><th>备注</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+     <table id="reportTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md hidden text-center">
+     <thead class="bg-blue-600 text-white">
+       <tr>
+         <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
+         <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th>
+       </tr>
+     </thead>
+     <tbody class="text-center"></tbody>
+    </table>
     </section>
 
     <!-- 导出 CSV -->
@@ -168,14 +168,14 @@
     <!-- 库存记录 -->
     <section class="mt-10" id="inventoryRecordsSection">
       <h2 class="text-2xl font-semibold text-blue-600">库存记录</h2>
-      <table id="recordsTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md">
+      <table id="recordsTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md text-center">
         <thead class="bg-blue-600 text-white">
           <tr>
-            <th>客户名称</th><th>进出货</th><th>日期</th><th>版型</th><th>底版颜色</th>
-            <th>花型</th><th>码数</th><th>数量</th><th>单价</th><th>总价</th><th>备注</th><th>操作</th>
+            <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
+            <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th><th class="text-center">操作</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody class="text-center"></tbody>
       </table>
     </section>
 
