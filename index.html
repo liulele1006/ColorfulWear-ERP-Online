@@ -483,85 +483,115 @@
     /****************************
      * 报表统计逻辑
      ****************************/
-    function mainReport(){
-      const form = document.getElementById("reportForm");
-      const table = document.getElementById("reportTable");
-      const reportCustomerInput = document.getElementById("reportCustomer");
-      const customerOptions = document.getElementById("customerOptions");
-      const totalQuantityEl = document.getElementById("totalQuantity");
-      const totalAmountEl = document.getElementById("totalAmount");
-      const reportSummary = document.getElementById("reportSummary");
+function mainReport(){
+  const form = document.getElementById("reportForm");
+  const table = document.getElementById("reportTable");
+  const reportCustomerInput = document.getElementById("reportCustomer");
+  const customerOptions = document.getElementById("customerOptions");
+  const totalQuantityEl = document.getElementById("totalQuantity");
+  const totalAmountEl = document.getElementById("totalAmount");
+  const reportSummary = document.getElementById("reportSummary");
 
-      async function loadCustomerOptions() {
-        const {data,error} = await supabaseClient.from('inventory_movements').select('customer_name').order('customer_name',{ascending:true}).limit(100);
-        if(error){console.error(error); return;}
-        const uniqueCustomers = Array.from(new Set(data.map(d=>d.customer_name))).slice(0,10);
-        customerOptions.innerHTML = '';
-        const allOption = document.createElement('option');
-        allOption.value = "所有客户";
-        customerOptions.appendChild(allOption);
-        uniqueCustomers.forEach(c=>{
-          const opt = document.createElement('option');
-          opt.value = c;
-          customerOptions.appendChild(opt);
-        });
+  // 动态加载客户下拉选项（最近有记录的前10个客户）
+  async function loadCustomerOptions() {
+    const { data, error } = await supabaseClient
+      .from('inventory_movements')
+      .select('customer_name, date')
+      .order('date', { ascending: false })
+      .limit(100); // 查询最近 100 条记录
+    if (error) { console.error(error); return; }
+
+    // 去重并只保留最近出现的前 10 个客户
+    const uniqueCustomers = [];
+    for (const record of data) {
+      if (record.customer_name && !uniqueCustomers.includes(record.customer_name)) {
+        uniqueCustomers.push(record.customer_name);
       }
-      loadCustomerOptions();
-
-      loadOptionsFunc = async ()=>{
-        await loadCustomerOptions();
-        await loadDatalistOptions('customer_name','customer_name','customerNameOptions');
-        await loadDatalistOptions('customer_name','edit_customer_name','customerNameOptionsEdit');
-        await loadDatalistOptions('style','style','styleOptions');
-        await loadDatalistOptions('style','edit_style','styleOptionsEdit');
-        await loadDatalistOptions('base_color','base_color','baseColorOptions');
-        await loadDatalistOptions('base_color','edit_base_color','baseColorOptionsEdit');
-        await loadDatalistOptions('pattern','pattern','patternOptions');
-        await loadDatalistOptions('pattern','edit_pattern','patternOptionsEdit');
-        await loadDatalistOptions('size','size','sizeOptions');
-        await loadDatalistOptions('size','edit_size','sizeOptionsEdit');
-        await loadDatalistOptions('note','note','noteOptions');
-        await loadDatalistOptions('note','edit_note','noteOptionsEdit');
-      };
-      loadOptionsFunc();
-
-      async function generateReport(){
-        const start = document.getElementById("reportStartDate").value;
-        const end = document.getElementById("reportEndDate").value;
-        let customerFilter = reportCustomerInput.value.trim();
-        if(customerFilter==="所有客户") customerFilter="";
-        let query = supabaseClient.from('inventory_movements').select('*');
-        if(start) query = query.gte('date',start);
-        if(end) query = query.lte('date',end);
-        if(customerFilter) query = query.ilike('customer_name', `%${customerFilter}%`);
-        const {data,error} = await query.order('date',{ascending:false});
-        if(error){console.error(error);return;}
-        const tbody = table.querySelector("tbody");
-        tbody.innerHTML="";
-        let totalQuantity=0, totalAmount=0;
-        data.forEach(r=>{
-          totalQuantity += r.quantity;
-          totalAmount += r.total_price;
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${r.customer_name}</td><td>${r.movement_type}</td><td>${r.date}</td>
-                          <td>${r.style||''}</td><td>${r.base_color||''}</td><td>${r.pattern||''}</td>
-                          <td>${r.size||''}</td><td>${r.quantity}</td><td>${r.unit_price}</td>
-                          <td>${r.total_price}</td><td>${r.note||''}</td>`;
-          tbody.appendChild(tr);
-        });
-        totalQuantityEl.textContent = totalQuantity;
-        totalAmountEl.textContent = totalAmount.toFixed(2);
-        reportSummary.classList.remove("hidden");
-        table.classList.remove("hidden");
-      }
-
-      form.addEventListener("submit",e=>{
-        e.preventDefault();
-        generateReport();
-      });
-
-      refreshReportFunc = generateReport;
+      if (uniqueCustomers.length >= 10) break;
     }
+
+    customerOptions.innerHTML = '';
+    const allOption = document.createElement('option');
+    allOption.value = "所有客户";
+    customerOptions.appendChild(allOption);
+
+    uniqueCustomers.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      customerOptions.appendChild(opt);
+    });
+  }
+  loadCustomerOptions();
+
+  // 同步更新各个 datalist
+  loadOptionsFunc = async () => {
+    await loadCustomerOptions();
+    await loadDatalistOptions('customer_name','customer_name','customerNameOptions');
+    await loadDatalistOptions('customer_name','edit_customer_name','customerNameOptionsEdit');
+    await loadDatalistOptions('style','style','styleOptions');
+    await loadDatalistOptions('style','edit_style','styleOptionsEdit');
+    await loadDatalistOptions('base_color','base_color','baseColorOptions');
+    await loadDatalistOptions('base_color','edit_base_color','baseColorOptionsEdit');
+    await loadDatalistOptions('pattern','pattern','patternOptions');
+    await loadDatalistOptions('pattern','edit_pattern','patternOptionsEdit');
+    await loadDatalistOptions('size','size','sizeOptions');
+    await loadDatalistOptions('size','edit_size','sizeOptionsEdit');
+    await loadDatalistOptions('note','note','noteOptions');
+    await loadDatalistOptions('note','edit_note','noteOptionsEdit');
+  };
+  loadOptionsFunc();
+
+  // 生成报表
+  async function generateReport(){
+    const start = document.getElementById("reportStartDate").value;
+    const end = document.getElementById("reportEndDate").value;
+    let customerFilter = reportCustomerInput.value.trim();
+    if(customerFilter==="所有客户") customerFilter="";
+
+    let query = supabaseClient.from('inventory_movements').select('*');
+    if(start) query = query.gte('date',start);
+    if(end) query = query.lte('date',end);
+    if(customerFilter) query = query.ilike('customer_name', `%${customerFilter}%`);
+
+    const {data,error} = await query.order('date',{ascending:false});
+    if(error){console.error(error); return;}
+
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    let totalQuantity = 0, totalAmount = 0;
+    data.forEach(r => {
+      totalQuantity += r.quantity;
+      totalAmount += r.total_price;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${r.customer_name}</td>
+                      <td>${r.movement_type}</td>
+                      <td>${r.date}</td>
+                      <td>${r.style||''}</td>
+                      <td>${r.base_color||''}</td>
+                      <td>${r.pattern||''}</td>
+                      <td>${r.size||''}</td>
+                      <td>${r.quantity}</td>
+                      <td>${r.unit_price}</td>
+                      <td>${r.total_price}</td>
+                      <td>${r.note||''}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    totalQuantityEl.textContent = totalQuantity;
+    totalAmountEl.textContent = totalAmount.toFixed(2);
+    reportSummary.classList.remove("hidden");
+    table.classList.remove("hidden");
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    generateReport();
+  });
+
+  refreshReportFunc = generateReport;
+}
+
 
     /****************************
      * 导出 CSV 逻辑
