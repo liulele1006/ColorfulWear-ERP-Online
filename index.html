@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -8,10 +7,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 
- <style>
+<style>
   /* ==== 鼠标悬停阴影效果（库存记录 + 统计报表通用）==== */
-
-  /* 给库存记录表 (#recordsTable) 和报表表 (#reportTable) 添加统一效果 */
   #recordsTable tbody tr,
   #reportTable tbody tr {
     transition: all 0.25s ease-in-out;
@@ -19,13 +16,13 @@
 
   #recordsTable tbody tr:hover,
   #reportTable tbody tr:hover {
-    background-color: #e0f2fe; /* 浅蓝背景 */
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); /* 蓝色阴影 */
+    background-color: #e0f2fe; 
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); 
     transform: scale(1.015);
   }
 </style>
+
 </head>
-  
 <body class="bg-gray-100 text-gray-800">
 
   <!-- Header Section -->
@@ -33,7 +30,6 @@
     <div class="container mx-auto text-center">
       <h1 class="text-3xl font-bold">七彩虹数码印花/ColorfulWear-进出货管理系统</h1>
     </div>
-
   </header>
 
   <main class="container mx-auto my-10 p-6 bg-white rounded-xl shadow-lg">
@@ -148,15 +144,15 @@
         <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
         <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
       </div>
-     <table id="reportTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md hidden text-center">
-     <thead class="bg-blue-600 text-white">
-       <tr>
-         <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
-         <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th>
-       </tr>
-     </thead>
-     <tbody class="text-center"></tbody>
-    </table>
+      <table id="reportTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md hidden">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th>客户名称</th><th>进出货</th><th>日期</th><th>版型</th><th>底版颜色</th>
+            <th>花型</th><th>码数</th><th>数量</th><th>单价</th><th>总价</th><th>备注</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
     <!-- 导出 CSV -->
@@ -168,14 +164,14 @@
     <!-- 库存记录 -->
     <section class="mt-10" id="inventoryRecordsSection">
       <h2 class="text-2xl font-semibold text-blue-600">库存记录</h2>
-      <table id="recordsTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md text-center">
+      <table id="recordsTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md">
         <thead class="bg-blue-600 text-white">
           <tr>
-            <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
-            <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th><th class="text-center">操作</th>
+            <th>客户名称</th><th>进出货</th><th>日期</th><th>版型</th><th>底版颜色</th>
+            <th>花型</th><th>码数</th><th>数量</th><th>单价</th><th>总价</th><th>备注</th><th>操作</th>
           </tr>
         </thead>
-        <tbody class="text-center"></tbody>
+        <tbody></tbody>
       </table>
     </section>
 
@@ -258,7 +254,6 @@
     let refreshReportFunc = null;
     const PASSWORD = "106614";
 
-    // 工具函数：加载前10个不同值到 datalist
     async function loadDatalistOptions(field, inputId, datalistId) {
       const {data,error} = await supabaseClient.from('inventory_movements').select(field).order(field,{ascending:true}).limit(100);
       if(error){console.error(error); return;}
@@ -289,6 +284,10 @@
 
       form.addEventListener("submit", async e=>{
         e.preventDefault();
+
+        /* ✅✅✅ 新增：防止重复提交 —— 点击保存先确认 */
+        if (!confirm("确定要保存这条记录吗？")) return;
+
         const record = {
           customer_name: document.getElementById("customer_name").value,
           movement_type: document.getElementById("movement_type").value,
@@ -302,6 +301,7 @@
           total_price: Number(document.getElementById("total_price").value),
           note: document.getElementById("note").value
         };
+
         const {error} = await supabaseClient.from('inventory_movements').insert([record]);
         if(error){alert("保存失败");console.error(error);return;}
         alert("记录保存成功！");
