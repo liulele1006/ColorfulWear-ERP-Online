@@ -480,10 +480,11 @@
       return fetchRecords;
     }
 
-    /****************************
-     * 报表统计逻辑
-     ****************************/
-function mainReport(){
+    
+/****************************
+ * 报表统计逻辑（优化版）
+ ****************************/
+function mainReport() {
   const form = document.getElementById("reportForm");
   const table = document.getElementById("reportTable");
   const reportCustomerInput = document.getElementById("reportCustomer");
@@ -492,69 +493,42 @@ function mainReport(){
   const totalAmountEl = document.getElementById("totalAmount");
   const reportSummary = document.getElementById("reportSummary");
 
-  // 动态加载客户下拉选项（最近有记录的前10个客户）
-  async function loadCustomerOptions() {
-    const { data, error } = await supabaseClient
-      .from('inventory_movements')
-      .select('customer_name, date')
-      .order('date', { ascending: false })
-      .limit(100); // 查询最近 100 条记录
-    if (error) { console.error(error); return; }
+  let reportData = []; // 存储当前报表筛选结果，用于导出 CSV
 
-    // 去重并只保留最近出现的前 10 个客户
-    const uniqueCustomers = [];
-    for (const record of data) {
-      if (record.customer_name && !uniqueCustomers.includes(record.customer_name)) {
-        uniqueCustomers.push(record.customer_name);
-      }
-      if (uniqueCustomers.length >= 10) break;
-    }
-
-    customerOptions.innerHTML = '';
-    const allOption = document.createElement('option');
-    allOption.value = "所有客户";
-    customerOptions.appendChild(allOption);
-
-    uniqueCustomers.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      customerOptions.appendChild(opt);
-    });
-  }
-  loadCustomerOptions();
-
-  // 同步更新各个 datalist
+  // 同步更新各个 datalist（统一调用 loadDatalistOptions）
   loadOptionsFunc = async () => {
-    await loadCustomerOptions();
-    await loadDatalistOptions('customer_name','customer_name','customerNameOptions');
-    await loadDatalistOptions('customer_name','edit_customer_name','customerNameOptionsEdit');
-    await loadDatalistOptions('style','style','styleOptions');
-    await loadDatalistOptions('style','edit_style','styleOptionsEdit');
-    await loadDatalistOptions('base_color','base_color','baseColorOptions');
-    await loadDatalistOptions('base_color','edit_base_color','baseColorOptionsEdit');
-    await loadDatalistOptions('pattern','pattern','patternOptions');
-    await loadDatalistOptions('pattern','edit_pattern','patternOptionsEdit');
-    await loadDatalistOptions('size','size','sizeOptions');
-    await loadDatalistOptions('size','edit_size','sizeOptionsEdit');
-    await loadDatalistOptions('note','note','noteOptions');
-    await loadDatalistOptions('note','edit_note','noteOptionsEdit');
+    await loadDatalistOptions('customer_name', 'customer_name', 'customerNameOptions');
+    await loadDatalistOptions('customer_name', 'edit_customer_name', 'customerNameOptionsEdit');
+    await loadDatalistOptions('customer_name', 'reportCustomer', 'customerOptions');
+    await loadDatalistOptions('style', 'style', 'styleOptions');
+    await loadDatalistOptions('style', 'edit_style', 'styleOptionsEdit');
+    await loadDatalistOptions('base_color', 'base_color', 'baseColorOptions');
+    await loadDatalistOptions('base_color', 'edit_base_color', 'baseColorOptionsEdit');
+    await loadDatalistOptions('pattern', 'pattern', 'patternOptions');
+    await loadDatalistOptions('pattern', 'edit_pattern', 'patternOptionsEdit');
+    await loadDatalistOptions('size', 'size', 'sizeOptions');
+    await loadDatalistOptions('size', 'edit_size', 'sizeOptionsEdit');
+    await loadDatalistOptions('note', 'note', 'noteOptions');
+    await loadDatalistOptions('note', 'edit_note', 'noteOptionsEdit');
   };
-  loadOptionsFunc();
+  loadOptionsFunc(); // 初始化加载一次
 
   // 生成报表
-  async function generateReport(){
+  async function generateReport() {
     const start = document.getElementById("reportStartDate").value;
     const end = document.getElementById("reportEndDate").value;
     let customerFilter = reportCustomerInput.value.trim();
-    if(customerFilter==="所有客户") customerFilter="";
+    if (customerFilter === "所有客户") customerFilter = "";
 
     let query = supabaseClient.from('inventory_movements').select('*');
-    if(start) query = query.gte('date',start);
-    if(end) query = query.lte('date',end);
-    if(customerFilter) query = query.ilike('customer_name', `%${customerFilter}%`);
+    if (start) query = query.gte('date', start);
+    if (end) query = query.lte('date', end);
+    if (customerFilter) query = query.ilike('customer_name', `%${customerFilter}%`);
 
-    const {data,error} = await query.order('date',{ascending:false});
-    if(error){console.error(error); return;}
+    const { data, error } = await query.order('date', { ascending: false });
+    if (error) { console.error(error); return; }
+
+    reportData = data; // 保存筛选结果，供导出 CSV 使用
 
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = "";
@@ -589,7 +563,11 @@ function mainReport(){
     generateReport();
   });
 
+  // 提供给外部调用刷新报表
   refreshReportFunc = generateReport;
+
+  // 返回 reportData 供导出 CSV 使用
+  return { generateReport, reportData };
 }
 
 
