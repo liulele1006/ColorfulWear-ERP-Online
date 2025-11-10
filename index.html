@@ -294,19 +294,37 @@
     const PASSWORD = "106614";     // 编辑/删除密码
 
     /****************************
-     * 动态加载 datalist 下拉选项
+     * 动态加载 datalist 下拉选项（取最后 10 条记录）
      ****************************/
     async function loadDatalistOptions(field, inputId, datalistId) {
-      const {data,error} = await supabaseClient.from('inventory_movements').select(field).order(field,{ascending:true}).limit(100);
-      if(error){console.error(error); return;}
-      const uniqueValues = Array.from(new Set(data.map(d=>d[field]).filter(v=>v))).slice(0,10);
-      const datalist = document.getElementById(datalistId);
-      datalist.innerHTML = '';
-      uniqueValues.forEach(v=>{
-        const opt = document.createElement('option');
-        opt.value=v;
-        datalist.appendChild(opt);
-      });
+      try {
+        // 查询最近 100 条数据（按日期倒序）
+        const { data, error } = await supabaseClient
+          .from('inventory_movements')
+          .select(field + ',date') // 取字段和日期
+          .order('date', { ascending: false })
+          .limit(100);
+
+        if (error) { console.error(error); return; }
+
+        // 去重并取前 10 个（即最近的 10 条唯一值）
+        const uniqueValues = Array.from(
+          new Set(
+            data.map(d => d[field]).filter(v => v)
+          )
+        ).slice(0, 10);
+
+        // 填充 datalist
+        const datalist = document.getElementById(datalistId);
+        datalist.innerHTML = '';
+        uniqueValues.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          datalist.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("加载下拉菜单失败:", err);
+      }
     }
 
     /****************************
