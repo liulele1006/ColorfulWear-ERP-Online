@@ -20,6 +20,19 @@
     box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); 
     transform: scale(1.015);
   }
+  /* ==== 固定高度滚动容器 ==== */
+  .table-scroll-container {
+    max-height: 400px; /* 可根据需要调整高度 */
+    overflow-y: auto;
+  }
+
+  /* 保持表头固定 */
+  .table-scroll-container table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #2563eb; /* 保持表头蓝色 */
+    z-index: 10;
+  }
 </style>
 
 </head>
@@ -144,15 +157,19 @@
         <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
         <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
       </div>
-      <table id="reportTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md hidden text-center">
-        <thead class="bg-blue-600 text-white">
-          <tr>
-            <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
-            <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th>
-         </tr>
-       </thead>
-       <tbody class="text-center"></tbody>
-     </table>
+      <!-- 报表放在固定容器内 -->
+      <div class="table-scroll-container mt-6">
+        <table id="reportTable" class="w-full table-auto bg-white shadow-md rounded-md hidden text-center">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
+              <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th>
+           </tr>
+         </thead>
+         <tbody class="text-center"></tbody>
+       </table>
+      </div>
+
     </section>
 
     <!-- 导出 CSV -->
@@ -164,15 +181,19 @@
     <!-- 库存记录 -->
     <section class="mt-10" id="inventoryRecordsSection">
       <h2 class="text-2xl font-semibold text-blue-600">库存记录</h2>
-      <table id="recordsTable" class="mt-6 w-full table-auto bg-white shadow-md rounded-md text-center">
-        <thead class="bg-blue-600 text-white">
-          <tr>
-            <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
-            <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th><th class="text-center">操作</th>
-          </tr>
-        </thead>
-        <tbody class="text-center"></tbody>
-      </table>
+    <!-- 库存记录放到固定容器内 -->
+      <div class="table-scroll-container mt-6">
+        <table id="recordsTable" class="w-full table-auto bg-white shadow-md rounded-md text-center">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
+              <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th><th class="text-center">操作</th>
+            </tr>
+          </thead>
+          <tbody class="text-center"></tbody>
+        </table>
+      </div>
+
     </section>
 
     <!-- 编辑弹窗 -->
