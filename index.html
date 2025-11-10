@@ -4,41 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>七彩虹数码印花</title>
+  <!-- 引入 Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 引入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-<style>
-  /* ==== 鼠标悬停阴影效果（库存记录 + 统计报表通用）==== */
-  #recordsTable tbody tr,
-  #reportTable tbody tr {
-    transition: all 0.25s ease-in-out;
-  }
+  <style>
+    /* ==== 鼠标悬停阴影效果（库存记录 + 统计报表通用）==== */
+    #recordsTable tbody tr,
+    #reportTable tbody tr {
+      transition: all 0.25s ease-in-out;
+    }
 
-  #recordsTable tbody tr:hover,
-  #reportTable tbody tr:hover {
-    background-color: #e0f2fe; 
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); 
-    transform: scale(1.015);
-  }
-  /* ==== 固定高度滚动容器 ==== */
-  .table-scroll-container {
-    max-height: 400px; /* 可根据需要调整高度 */
-    overflow-y: auto;
-  }
+    #recordsTable tbody tr:hover,
+    #reportTable tbody tr:hover {
+      background-color: #e0f2fe; 
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); 
+      transform: scale(1.015);
+    }
 
-  /* 保持表头固定 */
-  .table-scroll-container table thead th {
-    position: sticky;
-    top: 0;
-    background-color: #2563eb; /* 保持表头蓝色 */
-    z-index: 10;
-  }
-</style>
+    /* ==== 固定高度滚动容器 ==== */
+    .table-scroll-container {
+      max-height: 400px; /* 可根据需要调整高度 */
+      overflow-y: auto;
+    }
 
+    /* 保持表头固定 */
+    .table-scroll-container table thead th {
+      position: sticky;
+      top: 0;
+      background-color: #2563eb; /* 保持表头蓝色 */
+      z-index: 10;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <!-- Header Section -->
+  <!-- 页面头部 -->
   <header class="bg-blue-600 text-white py-6">
     <div class="container mx-auto text-center">
       <h1 class="text-3xl font-bold">七彩虹数码印花/ColorfulWear-进出货管理系统</h1>
@@ -47,10 +49,11 @@
 
   <main class="container mx-auto my-10 p-6 bg-white rounded-xl shadow-lg">
 
-    <!-- 新增进出货记录 -->
+    <!-- 新增进出货记录表单 -->
     <section class="space-y-6" id="inventoryFormSection">
       <h2 class="text-2xl font-semibold text-blue-600">新增进出货记录</h2>
       <form id="entryForm" class="space-y-4">
+        <!-- 第一行：客户名称 + 进出货类型 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="customer_name" class="block text-sm font-medium">客户名称</label>
@@ -67,6 +70,7 @@
           </div>
         </div>
 
+        <!-- 第二行：日期 + 版型 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="date" class="block text-sm font-medium">日期</label>
@@ -80,6 +84,7 @@
           </div>
         </div>
 
+        <!-- 第三行：底版颜色 + 花型 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="base_color" class="block text-sm font-medium">底版颜色</label>
@@ -95,6 +100,7 @@
           </div>
         </div>
 
+        <!-- 第四行：码数 + 数量 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="size" class="block text-sm font-medium">码数</label>
@@ -108,6 +114,7 @@
           </div>
         </div>
 
+        <!-- 第五行：单价 + 总价 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="unit_price" class="block text-sm font-medium">单价</label>
@@ -119,6 +126,7 @@
           </div>
         </div>
 
+        <!-- 第六行：备注 -->
         <div>
           <label for="note" class="block text-sm font-medium">备注</label>
           <input list="noteOptions" type="text" id="note"
@@ -126,14 +134,16 @@
           <datalist id="noteOptions"></datalist>
         </div>
 
+        <!-- 提交按钮 -->
         <button type="submit" class="mt-4 w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">保存记录</button>
       </form>
     </section>
 
-    <!-- 报表统计 -->
+    <!-- 报表统计表单 -->
     <section class="mt-10" id="reportSection">
       <h2 class="text-2xl font-semibold text-blue-600">报表统计</h2>
       <form id="reportForm" class="space-y-4">
+        <!-- 筛选条件：客户 + 开始日期 + 结束日期 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label for="reportCustomer" class="block text-sm font-medium">客户筛选</label>
@@ -149,15 +159,19 @@
             <input type="date" id="reportEndDate" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
         </div>
+
         <div class="mt-4">
           <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">生成报表</button>
         </div>
       </form>
+
+      <!-- 报表总计 -->
       <div id="reportSummary" class="mt-4 hidden p-4 bg-gray-100 rounded-md">
         <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
         <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
       </div>
-      <!-- 报表放在固定容器内 -->
+
+      <!-- 报表表格 -->
       <div class="table-scroll-container mt-6">
         <table id="reportTable" class="w-full table-auto bg-white shadow-md rounded-md hidden text-center">
           <thead class="bg-blue-600 text-white">
@@ -172,16 +186,15 @@
 
     </section>
 
-    <!-- 导出 CSV -->
+    <!-- 导出 CSV 按钮 -->
     <section class="mt-10">
       <h2 class="text-2xl font-semibold text-blue-600">导出数据</h2>
       <button id="exportCSVBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">导出 CSV</button>
     </section>
 
-    <!-- 库存记录 -->
+    <!-- 库存记录表格 -->
     <section class="mt-10" id="inventoryRecordsSection">
       <h2 class="text-2xl font-semibold text-blue-600">库存记录</h2>
-    <!-- 库存记录放到固定容器内 -->
       <div class="table-scroll-container mt-6">
         <table id="recordsTable" class="w-full table-auto bg-white shadow-md rounded-md text-center">
           <thead class="bg-blue-600 text-white">
@@ -193,14 +206,14 @@
           <tbody class="text-center"></tbody>
         </table>
       </div>
-
     </section>
 
-    <!-- 编辑弹窗 -->
+    <!-- 编辑记录弹窗 -->
     <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
       <div class="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto relative">
         <h2 class="text-xl font-semibold mb-4 sticky top-0 bg-white py-2">编辑记录</h2>
         <form id="editForm" class="space-y-4">
+          <!-- 编辑表单字段与新增表单相同，只是加上 edit_ 前缀 -->
           <div>
             <label for="edit_customer_name" class="block text-sm font-medium">客户名称</label>
             <input list="customerNameOptionsEdit" type="text" id="edit_customer_name" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -254,6 +267,8 @@
             <input list="noteOptionsEdit" type="text" id="edit_note" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <datalist id="noteOptionsEdit"></datalist>
           </div>
+
+          <!-- 弹窗底部按钮：取消 / 更新 -->
           <div class="flex justify-end mt-4 sticky bottom-0 bg-white py-2">
             <button type="button" id="cancelEdit" class="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">取消</button>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">更新</button>
@@ -265,16 +280,22 @@
   </main>
 
   <script>
+    /****************************
+     * Supabase 初始化
+     ****************************/
     const SUPABASE_URL = "https://oqwburiadlzlussbslbn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xd2J1cmlhZGx6bHVzc2JzbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTkzMTEsImV4cCI6MjA3Nzg5NTMxMX0.zUglY95hzH-qIvwqaMYkxrJVTYhaj040GfmrL6pYPms";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let currentEditId = null;
-    let currentData = [];
-    let loadOptionsFunc = null;
-    let refreshReportFunc = null;
-    const PASSWORD = "106614";
+    let currentEditId = null;      // 当前编辑的记录 ID
+    let currentData = [];          // 当前库存记录数据
+    let loadOptionsFunc = null;    // 动态加载下拉选项函数引用
+    let refreshReportFunc = null;  // 刷新报表函数引用
+    const PASSWORD = "106614";     // 编辑/删除密码
 
+    /****************************
+     * 动态加载 datalist 下拉选项
+     ****************************/
     async function loadDatalistOptions(field, inputId, datalistId) {
       const {data,error} = await supabaseClient.from('inventory_movements').select(field).order(field,{ascending:true}).limit(100);
       if(error){console.error(error); return;}
@@ -288,26 +309,28 @@
       });
     }
 
+    /****************************
+     * 新增进出货记录表单逻辑
+     ****************************/
     function mainInventoryForm(fetchRecords) {
       const form = document.getElementById("entryForm");
       const quantityInput = document.getElementById("quantity");
       const unitPriceInput = document.getElementById("unit_price");
       const totalPriceInput = document.getElementById("total_price");
 
+      // 计算总价
       function updateTotal() {
         const q = Number(quantityInput.value)||0;
         const p = Number(unitPriceInput.value)||0;
         totalPriceInput.value = (q*p).toFixed(2);
       }
-
       quantityInput.addEventListener("input", updateTotal);
       unitPriceInput.addEventListener("input", updateTotal);
 
       form.addEventListener("submit", async e=>{
         e.preventDefault();
 
-        /* ✅✅✅ 新增：防止重复提交 —— 点击保存先确认 */
-        if (!confirm("确定要保存这条记录吗？")) return;
+        if (!confirm("确定要保存这条记录吗？")) return; // 防止重复提交
 
         const record = {
           customer_name: document.getElementById("customer_name").value,
@@ -333,6 +356,9 @@
       });
     }
 
+    /****************************
+     * 库存记录表逻辑（显示/编辑/删除）
+     ****************************/
     function mainInventoryRecords() {
       const recordsTable = document.getElementById("recordsTable").querySelector("tbody");
 
@@ -352,12 +378,14 @@
           recordsTable.appendChild(tr);
         });
 
+        // 编辑按钮事件
         document.querySelectorAll('.edit-btn').forEach(btn=>btn.addEventListener('click',async e=>{
           const pwd = prompt("请输入密码进行编辑：");
           if(pwd !== PASSWORD){alert("密码错误"); return;}
           openEditModal(e.target.dataset.id);
         }));
 
+        // 删除按钮事件
         document.querySelectorAll('.delete-btn').forEach(btn=>btn.addEventListener('click',async e=>{
           const pwd = prompt("请输入密码进行删除：");
           if(pwd !== PASSWORD){alert("密码错误"); return;}
@@ -365,6 +393,7 @@
         }));
       }
 
+      // 删除记录
       async function deleteRecord(id){
         if(!confirm("确定要删除吗？")) return;
         const {error} = await supabaseClient.from('inventory_movements').delete().eq('id',id);
@@ -374,6 +403,7 @@
         if(refreshReportFunc) refreshReportFunc();
       }
 
+      // 打开编辑弹窗
       function openEditModal(id){
         currentEditId = id;
         const record = currentData.find(r=>r.id==id);
@@ -394,6 +424,7 @@
 
       document.getElementById("cancelEdit").addEventListener("click",()=>{document.getElementById("editModal").classList.add("hidden");});
 
+      // 编辑表单总价计算
       document.getElementById("edit_quantity").addEventListener("input",updateEditTotal);
       document.getElementById("edit_unit_price").addEventListener("input",updateEditTotal);
       function updateEditTotal(){
@@ -402,6 +433,7 @@
         document.getElementById("edit_total_price").value=(q*p).toFixed(2);
       }
 
+      // 提交编辑表单
       document.getElementById("editForm").addEventListener("submit",async e=>{
         e.preventDefault();
         if(!currentEditId) return;
@@ -430,6 +462,9 @@
       return fetchRecords;
     }
 
+    /****************************
+     * 报表统计逻辑
+     ****************************/
     function mainReport(){
       const form = document.getElementById("reportForm");
       const table = document.getElementById("reportTable");
@@ -454,6 +489,7 @@
         });
       }
       loadCustomerOptions();
+
       loadOptionsFunc = async ()=>{
         await loadCustomerOptions();
         await loadDatalistOptions('customer_name','customer_name','customerNameOptions');
@@ -509,6 +545,9 @@
       refreshReportFunc = generateReport;
     }
 
+    /****************************
+     * 导出 CSV 逻辑
+     ****************************/
     function mainExportModule(){
       document.getElementById("exportCSVBtn").addEventListener("click",()=>{
         const rows = currentData;
@@ -527,11 +566,14 @@
       });
     }
 
+    /****************************
+     * 页面加载入口
+     ****************************/
     window.onload = ()=>{
-      const fetchRecords = mainInventoryRecords();
-      mainInventoryForm(fetchRecords);
-      mainReport();
-      mainExportModule();
+      const fetchRecords = mainInventoryRecords(); // 初始化库存表格
+      mainInventoryForm(fetchRecords);            // 初始化新增表单
+      mainReport();                               // 初始化报表
+      mainExportModule();                         // 初始化导出功能
     }
   </script>
 
