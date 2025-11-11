@@ -71,18 +71,20 @@
         </div>
 
         <!-- 第二行：日期 + 版型 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 第二行：日期 + 版型 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 w-full box-border overflow-x-auto">
           <div>
             <label for="date" class="block text-sm font-medium">日期</label>
-            <input type="date" id="date" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label for="style" class="block text-sm font-medium">版型</label>
-            <input list="styleOptions" type="text" id="style"
-                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <datalist id="styleOptions"></datalist>
-          </div>
-        </div>
+            <input type="date" id="date" required class="w-full max-w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+         </div>
+         <div>
+           <label for="style" class="block text-sm font-medium">版型</label>
+           <input list="styleOptions" type="text" id="style"
+                  class="w-full max-w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+           <datalist id="styleOptions"></datalist>
+         </div>
+       </div>
+
 
         <!-- 第三行：底版颜色 + 花型 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
