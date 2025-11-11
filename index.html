@@ -534,7 +534,9 @@ function mainReport() {
       query = query.ilike('customer_name', `%${customerFilter}%`);
     }
     // 如果是 "所有客户"，不加条件
-
+    
+    const { data, error } = await query.order('date', { ascending: false });
+    if (error) { console.error(error); return; }
 
     reportData = data; // 保存筛选结果，供导出 CSV 使用
 
