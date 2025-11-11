@@ -165,14 +165,8 @@
         </div>
       </form>
 
-      <!-- 报表总计 -->
-      <div id="reportSummary" class="mt-4 hidden p-4 bg-gray-100 rounded-md">
-        <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
-        <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
-      </div>
-
       <!-- 报表表格 -->
-      <div class="table-scroll-container mt-6">
+      <div class="table-scroll-container mt-6">   /* 将报表表格放到固定容器内 */
         <table id="reportTable" class="w-full table-auto bg-white shadow-md rounded-md hidden text-center">
           <thead class="bg-blue-600 text-white">
             <tr>
@@ -184,6 +178,12 @@
        </table>
       </div>
 
+      <!-- 报表总计 -->
+      <div id="reportSummary" class="mt-4 hidden p-4 bg-gray-100 rounded-md">
+        <p class="font-medium">总数量: <span id="totalQuantity">0</span> 件</p>
+        <p class="font-medium">总金额: <span id="totalAmount">0.00</span> 元</p>
+      </div>
+      
     </section>
 
     <!-- 库存记录表格 -->
