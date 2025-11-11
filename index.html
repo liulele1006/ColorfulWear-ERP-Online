@@ -518,15 +518,23 @@ function mainReport() {
     const start = document.getElementById("reportStartDate").value;
     const end = document.getElementById("reportEndDate").value;
     let customerFilter = reportCustomerInput.value.trim();
-    if (customerFilter === "所有客户") customerFilter = "";
 
     let query = supabaseClient.from('inventory_movements').select('*');
+
+    // 日期过滤
     if (start) query = query.gte('date', start);
     if (end) query = query.lte('date', end);
-    if (customerFilter) query = query.ilike('customer_name', `%${customerFilter}%`);
 
-    const { data, error } = await query.order('date', { ascending: false });
-    if (error) { console.error(error); return; }
+    // 客户过滤
+    if (customerFilter === "") {
+      // 精确匹配空字符串客户名
+      query = query.eq('customer_name', '');
+    } else if (customerFilter.toLowerCase() !== "所有客户") {
+      // 模糊匹配具体客户
+      query = query.ilike('customer_name', `%${customerFilter}%`);
+    }
+    // 如果是 "所有客户"，不加条件
+
 
     reportData = data; // 保存筛选结果，供导出 CSV 使用
 
