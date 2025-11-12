@@ -223,6 +223,18 @@
         <p id="importStatus" class="text-sm mt-2 text-gray-600"></p>
       </div>
 
+
+      <!-- 导入 CSV 弹窗（放在 body 里任意位置） -->
+      <div id="importDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-lg w-11/12 max-w-4xl max-h-[80vh] overflow-y-auto relative">
+          <h2 class="text-xl font-semibold mb-4 sticky top-0 bg-white py-2">导入明细</h2>
+          <div id="importDetailContent" class="space-y-4"></div>
+          <div class="flex justify-end mt-4">
+            <button id="closeImportDetail" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">关闭</button>
+          </div>
+        </div>
+      </div>
+
       
       <!-- 阴影容器 -->
       <div class="p-4 bg-gray-100 rounded-lg shadow-md mt-4">
@@ -668,27 +680,25 @@ if (exportBtn) {
 /****************************
  * 导入 CSV 数据到 Supabase
  ****************************/
+// 替换你原来的 CSV 导入完成逻辑
 document.getElementById("importCSVBtn").addEventListener("click", async () => {
   const fileInput = document.getElementById("importFileInput");
   const statusEl = document.getElementById("importStatus");
   const file = fileInput.files[0];
 
-  if (!file) {
-    alert("请先选择一个 CSV 文件！");
-    return;
-  }
+  if (!file) { alert("请先选择一个 CSV 文件！"); return; }
 
   statusEl.textContent = "⏳ 正在读取文件，请稍候...";
 
-  // 读取 CSV
   const text = await file.text();
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
   const headers = ["customer_name","movement_type","date","style","base_color","pattern","size","quantity","unit_price","total_price","note"];
   
   let insertedCount = 0;
   let updatedCount = 0;
+  let insertedList = [];
+  let updatedList = [];
 
-  // 从第二行开始读取数据
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(",").map(c => c.replace(/^"|"$/g, "").trim());
     if (cols.length < headers.length) continue;
@@ -696,12 +706,10 @@ document.getElementById("importCSVBtn").addEventListener("click", async () => {
     const record = {};
     headers.forEach((h, idx) => record[h] = cols[idx]);
 
-    // 数值字段转数字
     record.quantity = Number(record.quantity) || 0;
     record.unit_price = Number(record.unit_price) || 0;
     record.total_price = Number(record.total_price) || 0;
 
-    // 检查是否已存在完全相同的记录
     const { data: existing, error: checkError } = await supabaseClient
       .from("inventory_movements")
       .select("id")
@@ -717,32 +725,70 @@ document.getElementById("importCSVBtn").addEventListener("click", async () => {
       .eq("total_price", record.total_price)
       .eq("note", record.note);
 
-    if (checkError) {
-      console.error(checkError);
-      continue;
-    }
+    if (checkError) { console.error(checkError); continue; }
 
     if (existing.length > 0) {
-      // 已存在 → 更新（这里使用相同字段条件）
       const { error: updateError } = await supabaseClient
         .from("inventory_movements")
         .update(record)
         .eq("id", existing[0].id);
 
-      if (!updateError) updatedCount++;
+      if (!updateError) { updatedCount++; updatedList.push(record); }
       else console.error("更新失败：", updateError);
     } else {
-      // 不存在 → 插入
       const { error: insertError } = await supabaseClient
         .from("inventory_movements")
         .insert([record]);
 
-      if (!insertError) insertedCount++;
+      if (!insertError) { insertedCount++; insertedList.push(record); }
       else console.error("插入失败：", insertError);
     }
   }
 
   statusEl.textContent = `✅ 导入完成：新增 ${insertedCount} 条，更新 ${updatedCount} 条`;
+
+  // 弹出明细窗口
+  const modal = document.getElementById("importDetailModal");
+  const content = document.getElementById("importDetailContent");
+  content.innerHTML = "";
+
+  if (insertedList.length > 0) {
+    const insDiv = document.createElement("div");
+    insDiv.innerHTML = `<h3 class="font-bold text-blue-600">新增记录 (${insertedList.length})</h3>`;
+    const insTable = document.createElement("table");
+    insTable.className = "w-full table-auto border border-gray-300";
+    insTable.innerHTML = `
+      <thead class="bg-gray-200">
+        <tr>${headers.map(h=>`<th class="border px-2 py-1">${h}</th>`).join("")}</tr>
+      </thead>
+      <tbody>
+        ${insertedList.map(r=>`<tr>${headers.map(h=>`<td class="border px-2 py-1">${r[h]||""}</td>`).join("")}</tr>`).join("")}
+      </tbody>`;
+    insDiv.appendChild(insTable);
+    content.appendChild(insDiv);
+  }
+
+  if (updatedList.length > 0) {
+    const updDiv = document.createElement("div");
+    updDiv.innerHTML = `<h3 class="font-bold text-green-600 mt-4">更新记录 (${updatedList.length})</h3>`;
+    const updTable = document.createElement("table");
+    updTable.className = "w-full table-auto border border-gray-300";
+    updTable.innerHTML = `
+      <thead class="bg-gray-200">
+        <tr>${headers.map(h=>`<th class="border px-2 py-1">${h}</th>`).join("")}</tr>
+      </thead>
+      <tbody>
+        ${updatedList.map(r=>`<tr>${headers.map(h=>`<td class="border px-2 py-1">${r[h]||""}</td>`).join("")}</tr>`).join("")}
+      </tbody>`;
+    updDiv.appendChild(updTable);
+    content.appendChild(updDiv);
+  }
+
+  modal.classList.remove("hidden");
+
+  document.getElementById("closeImportDetail").addEventListener("click", () => {
+    modal.classList.add("hidden");
+  });
 });
 
     
