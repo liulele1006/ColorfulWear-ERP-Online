@@ -652,6 +652,88 @@ if (exportBtn) {
   return { generateReport, reportData };
 }
 
+
+/****************************
+ * 导入 CSV 数据到 Supabase
+ ****************************/
+document.getElementById("importCSVBtn").addEventListener("click", async () => {
+  const fileInput = document.getElementById("importFileInput");
+  const statusEl = document.getElementById("importStatus");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("请先选择一个 CSV 文件！");
+    return;
+  }
+
+  statusEl.textContent = "⏳ 正在读取文件，请稍候...";
+
+  // 读取 CSV
+  const text = await file.text();
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+  const headers = ["customer_name","movement_type","date","style","base_color","pattern","size","quantity","unit_price","total_price","note"];
+  
+  let insertedCount = 0;
+  let updatedCount = 0;
+
+  // 从第二行开始读取数据
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map(c => c.replace(/^"|"$/g, "").trim());
+    if (cols.length < headers.length) continue;
+
+    const record = {};
+    headers.forEach((h, idx) => record[h] = cols[idx]);
+
+    // 数值字段转数字
+    record.quantity = Number(record.quantity) || 0;
+    record.unit_price = Number(record.unit_price) || 0;
+    record.total_price = Number(record.total_price) || 0;
+
+    // 检查是否已存在完全相同的记录
+    const { data: existing, error: checkError } = await supabaseClient
+      .from("inventory_movements")
+      .select("id")
+      .eq("customer_name", record.customer_name)
+      .eq("movement_type", record.movement_type)
+      .eq("date", record.date)
+      .eq("style", record.style)
+      .eq("base_color", record.base_color)
+      .eq("pattern", record.pattern)
+      .eq("size", record.size)
+      .eq("quantity", record.quantity)
+      .eq("unit_price", record.unit_price)
+      .eq("total_price", record.total_price)
+      .eq("note", record.note);
+
+    if (checkError) {
+      console.error(checkError);
+      continue;
+    }
+
+    if (existing.length > 0) {
+      // 已存在 → 更新（这里使用相同字段条件）
+      const { error: updateError } = await supabaseClient
+        .from("inventory_movements")
+        .update(record)
+        .eq("id", existing[0].id);
+
+      if (!updateError) updatedCount++;
+      else console.error("更新失败：", updateError);
+    } else {
+      // 不存在 → 插入
+      const { error: insertError } = await supabaseClient
+        .from("inventory_movements")
+        .insert([record]);
+
+      if (!insertError) insertedCount++;
+      else console.error("插入失败：", insertError);
+    }
+  }
+
+  statusEl.textContent = `✅ 导入完成：新增 ${insertedCount} 条，更新 ${updatedCount} 条`;
+});
+
+    
     
     /****************************
      * 导出 CSV 逻辑
