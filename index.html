@@ -211,10 +211,19 @@
           <tbody class="text-center"></tbody>
         </table>
       </div>
-      <!-- 导出 CSV 按钮 -->    
-      <button id="exportCSVBtn" class="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">导出所有数据CSV</button>
-    </section>
 
+      <!-- 阴影容器 -->
+      <div class="p-4 bg-gray-100 rounded-lg shadow-md mt-4">
+        <!-- 导出所有数据CSV 按钮 -->
+        <button id="exportCSVBtn"
+                class="px-4 py-2 bg-green-600 text-white rounded-md
+                       hover:bg-green-700
+                       focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
+                       transition-colors duration-200">
+           导出所有数据CSV
+         </button>
+       </div>
+      
     <!-- 编辑记录弹窗 -->
     <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
       <div class="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto relative">
