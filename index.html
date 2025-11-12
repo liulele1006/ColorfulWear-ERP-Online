@@ -212,6 +212,18 @@
         </table>
       </div>
 
+
+      <!-- 导入现有数据按钮区域 -->
+      <div class="p-4 bg-gray-100 rounded-lg shadow-md mt-4">
+        <label class="block text-sm font-medium mb-2">导入现有数据（CSV）</label>
+        <input type="file" id="importFileInput" accept=".csv" class="mb-3 block">
+        <button id="importCSVBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none">
+          导入到 Supabase
+        </button>
+        <p id="importStatus" class="text-sm mt-2 text-gray-600"></p>
+      </div>
+
+      
       <!-- 阴影容器 -->
       <div class="p-4 bg-gray-100 rounded-lg shadow-md mt-4">
         <!-- 导出所有数据CSV 按钮 -->
