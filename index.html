@@ -184,6 +184,12 @@
       <div id="reportSummary" class="mt-4 hidden p-4 bg-gray-100 rounded-md">
         <p class="font-bold">总数量: <span id="totalQuantity">0</span> 件</p>
         <p class="font-bold">总金额: <span id="totalAmount">0.00</span> 元</p>
+
+      <!-- 新增导出报表按钮 -->
+        <button id="exportReportBtn"
+              class="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+        导出报表数据CSV
+       </button>
       </div>
       
     </section>
@@ -574,9 +580,49 @@ function mainReport() {
     generateReport();
   });
 
+  // ✅ 导出报表按钮监听（放在 return 之前）
+  const exportBtn = document.getElementById("exportReportBtn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      if (reportData.length === 0) {
+        alert("没有可导出的数据，请先生成报表！");
+        return;
+      }
+
+      const headers = [
+        "客户名称", "进出货", "日期", "版型", "底版颜色",
+        "花型", "码数", "数量", "单价", "总价", "备注"
+      ];
+      const rows = reportData.map(item => [
+        item.customer_name || "",
+        item.movement_type || "",
+        item.date || "",
+        item.style || "",
+        item.base_color || "",
+        item.pattern || "",
+        item.size || "",
+        item.quantity || 0,
+        item.unit_price || 0,
+        item.total_price || 0,
+        item.note || ""
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const dateStr = new Date().toISOString().split("T")[0];
+      link.href = URL.createObjectURL(blob);
+      link.download = `报表导出_${dateStr}.csv`;
+      link.click();
+    });
+  }
+  
   // 提供给外部调用刷新报表
   refreshReportFunc = generateReport;
-
   // 返回 reportData 供导出 CSV 使用
   return { generateReport, reportData };
 }
