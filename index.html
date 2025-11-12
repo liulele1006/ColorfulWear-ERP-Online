@@ -580,7 +580,7 @@ function mainReport() {
     generateReport();
   });
 
-  // ✅ 导出报表按钮监听（放在 return 之前）
+
   const exportBtn = document.getElementById("exportReportBtn");
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
@@ -589,37 +589,40 @@ function mainReport() {
         return;
       }
 
-      const headers = [
-        "客户名称", "进出货", "日期", "版型", "底版颜色",
-        "花型", "码数", "数量", "单价", "总价", "备注"
-      ];
-      const rows = reportData.map(item => [
-        item.customer_name || "",
-        item.movement_type || "",
-        item.date || "",
-        item.style || "",
-        item.base_color || "",
-        item.pattern || "",
-        item.size || "",
-        item.quantity || 0,
-        item.unit_price || 0,
-        item.total_price || 0,
-        item.note || ""
-      ]);
+    // ✅ 按日期正序排序
+    const sortedData = [...reportData].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      const csvContent = [
-        headers.join(","),
-        ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      ].join("\n");
+    const headers = [
+      "客户名称", "进出货", "日期", "版型", "底版颜色",
+      "花型", "码数", "数量", "单价", "总价", "备注"
+    ];
+    const rows = sortedData.map(item => [
+      item.customer_name || "",
+      item.movement_type || "",
+      item.date || "",
+      item.style || "",
+      item.base_color || "",
+      item.pattern || "",
+      item.size || "",
+      item.quantity || 0,
+      item.unit_price || 0,
+      item.total_price || 0,
+      item.note || ""
+    ]);
 
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const dateStr = new Date().toISOString().split("T")[0];
-      link.href = URL.createObjectURL(blob);
-      link.download = `报表导出_${dateStr}.csv`;
-      link.click();
-    });
-  }
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().split("T")[0];
+    link.href = URL.createObjectURL(blob);
+    link.download = `报表导出_${dateStr}.csv`;
+    link.click();
+  });
+}
   
   // 提供给外部调用刷新报表
   refreshReportFunc = generateReport;
