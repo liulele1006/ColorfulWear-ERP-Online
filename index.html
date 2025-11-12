@@ -580,7 +580,7 @@ function mainReport() {
     generateReport();
   });
 
-
+  // ✅ 导出报表按钮监听（放在 return 之前）
   const exportBtn = document.getElementById("exportReportBtn");
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
