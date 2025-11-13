@@ -190,6 +190,12 @@
               class="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
         导出报表数据CSV
        </button>
+
+<button id="batchDeleteBtn" 
+  class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 ml-2">
+  批量删除
+</button>
+
       </div>
       
     </section>
@@ -414,191 +420,237 @@
       });
     }
 
-    /****************************
-     * 库存记录表逻辑（显示/编辑/删除）
-     ****************************/
-    function mainInventoryRecords() {
-      const recordsTable = document.getElementById("recordsTable").querySelector("tbody");
-
-      async function fetchRecords() {
-        const {data,error} = await supabaseClient.from('inventory_movements').select('*').order('date',{ascending:false});
-        if(error){console.error(error); return;}
-        currentData = data;
-        recordsTable.innerHTML="";
-        data.forEach(r=>{
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${r.customer_name}</td><td>${r.movement_type}</td><td>${r.date}</td>
-                          <td>${r.style||''}</td><td>${r.base_color||''}</td><td>${r.pattern||''}</td>
-                          <td>${r.size||''}</td><td>${r.quantity}</td><td>${r.unit_price}</td>
-                          <td>${r.total_price}</td><td>${r.note||''}</td>
-                          <td><button class="edit-btn text-blue-500" data-id="${r.id}">编辑</button>
-                              <button class="delete-btn text-red-500 ml-2" data-id="${r.id}">删除</button></td>`;
-          recordsTable.appendChild(tr);
-        });
-
-        // 编辑按钮事件
-        document.querySelectorAll('.edit-btn').forEach(btn=>btn.addEventListener('click',async e=>{
-          const pwd = prompt("请输入密码进行编辑：");
-          if(pwd !== PASSWORD){alert("密码错误"); return;}
-          openEditModal(e.target.dataset.id);
-        }));
-
-        // 删除按钮事件
-        document.querySelectorAll('.delete-btn').forEach(btn=>btn.addEventListener('click',async e=>{
-          const pwd = prompt("请输入密码进行删除：");
-          if(pwd !== PASSWORD){alert("密码错误"); return;}
-          deleteRecord(e.target.dataset.id);
-        }));
-      }
-
-      // 删除记录
-      async function deleteRecord(id){
-        if(!confirm("确定要删除吗？")) return;
-        const {error} = await supabaseClient.from('inventory_movements').delete().eq('id',id);
-        if(error){alert("删除失败");console.error(error);return;}
-        await fetchRecords();
-        if(loadOptionsFunc) loadOptionsFunc();
-        if(refreshReportFunc) refreshReportFunc();
-      }
-
-      // 打开编辑弹窗
-      function openEditModal(id){
-        currentEditId = id;
-        const record = currentData.find(r=>r.id==id);
-        if(!record) return;
-        document.getElementById("edit_customer_name").value=record.customer_name;
-        document.getElementById("edit_movement_type").value=record.movement_type;
-        document.getElementById("edit_date").value=record.date;
-        document.getElementById("edit_style").value=record.style||'';
-        document.getElementById("edit_base_color").value=record.base_color||'';
-        document.getElementById("edit_pattern").value=record.pattern||'';
-        document.getElementById("edit_size").value=record.size||'';
-        document.getElementById("edit_quantity").value=record.quantity;
-        document.getElementById("edit_unit_price").value=record.unit_price;
-        document.getElementById("edit_total_price").value=record.total_price;
-        document.getElementById("edit_note").value=record.note||'';
-        document.getElementById("editModal").classList.remove("hidden");
-      }
-
-      document.getElementById("cancelEdit").addEventListener("click",()=>{document.getElementById("editModal").classList.add("hidden");});
-
-      // 编辑表单总价计算
-      document.getElementById("edit_quantity").addEventListener("input",updateEditTotal);
-      document.getElementById("edit_unit_price").addEventListener("input",updateEditTotal);
-      function updateEditTotal(){
-        const q = Number(document.getElementById("edit_quantity").value)||0;
-        const p = Number(document.getElementById("edit_unit_price").value)||0;
-        document.getElementById("edit_total_price").value=(q*p).toFixed(2);
-      }
-
-      // 提交编辑表单
-      document.getElementById("editForm").addEventListener("submit",async e=>{
-        e.preventDefault();
-        if(!currentEditId) return;
-        const updated = {
-          customer_name: document.getElementById("edit_customer_name").value,
-          movement_type: document.getElementById("edit_movement_type").value,
-          date: document.getElementById("edit_date").value,
-          style: document.getElementById("edit_style").value,
-          base_color: document.getElementById("edit_base_color").value,
-          pattern: document.getElementById("edit_pattern").value,
-          size: document.getElementById("edit_size").value,
-          quantity: Number(document.getElementById("edit_quantity").value),
-          unit_price: Number(document.getElementById("edit_unit_price").value),
-          total_price: Number(document.getElementById("edit_total_price").value),
-          note: document.getElementById("edit_note").value
-        };
-        const {error} = await supabaseClient.from('inventory_movements').update(updated).eq('id',currentEditId);
-        if(error){alert("更新失败");console.error(error);return;}
-        document.getElementById("editModal").classList.add("hidden");
-        await fetchRecords();
-        if(loadOptionsFunc) loadOptionsFunc();
-        if(refreshReportFunc) refreshReportFunc();
-      });
-
-      fetchRecords();
-      return fetchRecords;
-    }
-
-    
+  
 /****************************
- * 报表统计逻辑（优化版）
+ * 库存记录主函数
+ ****************************/
+function mainInventoryRecords() {
+  const recordsTable = document.getElementById("recordsTable").querySelector("tbody");
+
+  async function fetchRecords() {
+    const { data, error } = await supabaseClient
+      .from('inventory_movements')
+      .select('*')
+      .order('date', { ascending: false });
+    if (error) { console.error(error); return; }
+
+    currentData = data;
+    recordsTable.innerHTML = "";
+    data.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.customer_name}</td><td>${r.movement_type}</td><td>${r.date}</td>
+        <td>${r.style || ''}</td><td>${r.base_color || ''}</td><td>${r.pattern || ''}</td>
+        <td>${r.size || ''}</td><td>${r.quantity}</td><td>${r.unit_price}</td>
+        <td>${r.total_price}</td><td>${r.note || ''}</td>
+        <td>
+          <button class="edit-btn text-blue-500" data-id="${r.id}">编辑</button>
+          <button class="delete-btn text-red-500 ml-2" data-id="${r.id}">删除</button>
+        </td>`;
+      recordsTable.appendChild(tr);
+    });
+
+    // 绑定外部编辑与删除函数
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', e => handleEditClick(e.target.dataset.id));
+    });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', e => handleDeleteClick(e.target.dataset.id));
+    });
+  }
+
+  // 点击事件封装
+  function handleEditClick(id) {
+    const pwd = prompt("请输入密码进行编辑：");
+    if (pwd !== PASSWORD) { alert("密码错误"); return; }
+    openEditModal(id, currentData, fetchRecords); // 调用外部函数
+  }
+
+  function handleDeleteClick(id) {
+    const pwd = prompt("请输入密码进行删除：");
+    if (pwd !== PASSWORD) { alert("密码错误"); return; }
+    deleteRecord(id, fetchRecords); // 调用外部函数
+  }
+
+  fetchRecords();
+  return fetchRecords;
+}
+
+
+/****************************
+ * 独立删除函数
+ ****************************/
+async function deleteRecord(id, refreshFunc) {
+  if (!confirm("确定要删除吗？")) return;
+  const { error } = await supabaseClient.from('inventory_movements').delete().eq('id', id);
+  if (error) { alert("删除失败"); console.error(error); return; }
+  if (typeof refreshFunc === 'function') await refreshFunc();
+  if (loadOptionsFunc) loadOptionsFunc();
+  if (refreshReportFunc) refreshReportFunc();
+}
+
+
+/****************************
+ * 独立编辑函数
+ ****************************/
+function openEditModal(id, currentData, refreshFunc) {
+  currentEditId = id;
+  const record = currentData.find(r => r.id == id);
+  if (!record) return;
+
+  // 填充表单
+  document.getElementById("edit_customer_name").value = record.customer_name;
+  document.getElementById("edit_movement_type").value = record.movement_type;
+  document.getElementById("edit_date").value = record.date;
+  document.getElementById("edit_style").value = record.style || '';
+  document.getElementById("edit_base_color").value = record.base_color || '';
+  document.getElementById("edit_pattern").value = record.pattern || '';
+  document.getElementById("edit_size").value = record.size || '';
+  document.getElementById("edit_quantity").value = record.quantity;
+  document.getElementById("edit_unit_price").value = record.unit_price;
+  document.getElementById("edit_total_price").value = record.total_price;
+  document.getElementById("edit_note").value = record.note || '';
+
+  // 显示弹窗
+  const modal = document.getElementById("editModal");
+  modal.classList.remove("hidden");
+
+  // 绑定事件（只绑定一次）
+  document.getElementById("cancelEdit").onclick = () => modal.classList.add("hidden");
+  document.getElementById("edit_quantity").oninput = updateEditTotal;
+  document.getElementById("edit_unit_price").oninput = updateEditTotal;
+
+  function updateEditTotal() {
+    const q = Number(document.getElementById("edit_quantity").value) || 0;
+    const p = Number(document.getElementById("edit_unit_price").value) || 0;
+    document.getElementById("edit_total_price").value = (q * p).toFixed(2);
+  }
+
+  // 提交更新
+  document.getElementById("editForm").onsubmit = async (e) => {
+    e.preventDefault();
+    if (!currentEditId) return;
+
+    const updated = {
+      customer_name: document.getElementById("edit_customer_name").value,
+      movement_type: document.getElementById("edit_movement_type").value,
+      date: document.getElementById("edit_date").value,
+      style: document.getElementById("edit_style").value,
+      base_color: document.getElementById("edit_base_color").value,
+      pattern: document.getElementById("edit_pattern").value,
+      size: document.getElementById("edit_size").value,
+      quantity: Number(document.getElementById("edit_quantity").value),
+      unit_price: Number(document.getElementById("edit_unit_price").value),
+      total_price: Number(document.getElementById("edit_total_price").value),
+      note: document.getElementById("edit_note").value
+    };
+
+    const { error } = await supabaseClient
+      .from('inventory_movements')
+      .update(updated)
+      .eq('id', currentEditId);
+
+    if (error) { alert("更新失败"); console.error(error); return; }
+
+    modal.classList.add("hidden");
+    if (typeof refreshFunc === 'function') await refreshFunc();
+    if (loadOptionsFunc) loadOptionsFunc();
+    if (refreshReportFunc) refreshReportFunc();
+  };
+}
+
+
+/****************************
+ * 报表统计逻辑（支持批量删除）
  ****************************/
 function mainReport() {
   const form = document.getElementById("reportForm");
   const table = document.getElementById("reportTable");
   const reportCustomerInput = document.getElementById("reportCustomer");
-  const customerOptions = document.getElementById("customerOptions");
   const totalQuantityEl = document.getElementById("totalQuantity");
   const totalAmountEl = document.getElementById("totalAmount");
   const reportSummary = document.getElementById("reportSummary");
+  const batchDeleteBtn = document.getElementById("batchDeleteBtn"); // ✅ 批量删除按钮
 
-  let reportData = []; // 存储当前报表筛选结果，用于导出 CSV
+  let reportData = []; // 当前报表数据
+  let selectedIds = new Set(); // ✅ 存储选中行 ID
 
-  // 同步更新各个 datalist（统一调用 loadDatalistOptions）
+  // 初始化 datalist
   loadOptionsFunc = async () => {
-    await loadDatalistOptions('customer_name', 'customer_name', 'customerNameOptions');
-    await loadDatalistOptions('customer_name', 'edit_customer_name', 'customerNameOptionsEdit');
     await loadDatalistOptions('customer_name', 'reportCustomer', 'customerOptions');
-    await loadDatalistOptions('style', 'style', 'styleOptions');
-    await loadDatalistOptions('style', 'edit_style', 'styleOptionsEdit');
-    await loadDatalistOptions('base_color', 'base_color', 'baseColorOptions');
-    await loadDatalistOptions('base_color', 'edit_base_color', 'baseColorOptionsEdit');
-    await loadDatalistOptions('pattern', 'pattern', 'patternOptions');
-    await loadDatalistOptions('pattern', 'edit_pattern', 'patternOptionsEdit');
-    await loadDatalistOptions('size', 'size', 'sizeOptions');
-    await loadDatalistOptions('size', 'edit_size', 'sizeOptionsEdit');
-    await loadDatalistOptions('note', 'note', 'noteOptions');
-    await loadDatalistOptions('note', 'edit_note', 'noteOptionsEdit');
   };
-  loadOptionsFunc(); // 初始化加载一次
+  loadOptionsFunc();
 
-  // 生成报表
+  // ✅ 生成报表
   async function generateReport() {
     const start = document.getElementById("reportStartDate").value;
     const end = document.getElementById("reportEndDate").value;
-    let customerFilter = reportCustomerInput.value.trim();
+    const customerFilter = reportCustomerInput.value.trim();
 
     let query = supabaseClient.from('inventory_movements').select('*');
-
-    // 日期过滤
     if (start) query = query.gte('date', start);
     if (end) query = query.lte('date', end);
 
-    // 客户过滤
-    if (customerFilter === "") {
-      // 精确匹配空字符串客户名
-      query = query.eq('customer_name', '');
-    } else if (customerFilter.toLowerCase() !== "所有客户") {
-      // 模糊匹配具体客户
+    if (customerFilter === "") query = query.eq('customer_name', '');
+    else if (customerFilter.toLowerCase() !== "所有客户")
       query = query.ilike('customer_name', `%${customerFilter}%`);
-    }
-    // 如果是 "所有客户"，不加条件
-    
+
     const { data, error } = await query.order('date', { ascending: false });
-    if (error) { console.error(error); return; }
+    if (error) return console.error(error);
+    reportData = data;
 
-    reportData = data; // 保存筛选结果，供导出 CSV 使用
-
+    const thead = table.querySelector("thead");
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = "";
 
+    // ✅ 表头样式调整 + 全选框
+    thead.innerHTML = `
+      <tr class="bg-gray-200 text-gray-800 text-base font-semibold">
+        <th class="px-3 py-2 text-center">
+          <input type="checkbox" id="selectAll" class="cursor-pointer" />
+        </th>
+        <th class="px-3 py-2">客户</th>
+        <th class="px-3 py-2">类型</th>
+        <th class="px-3 py-2">日期</th>
+        <th class="px-3 py-2">版型</th>
+        <th class="px-3 py-2">底色</th>
+        <th class="px-3 py-2">花型</th>
+        <th class="px-3 py-2">尺码</th>
+        <th class="px-3 py-2 text-right">数量</th>
+        <th class="px-3 py-2 text-right">单价</th>
+        <th class="px-3 py-2 text-right">总价</th>
+        <th class="px-3 py-2">备注</th>
+        <th class="px-3 py-2 text-center">操作</th>
+      </tr>
+    `;
+
+    // ✅ 表体渲染
     let totalQuantity = 0, totalAmount = 0;
     data.forEach(r => {
       totalQuantity += r.quantity;
       totalAmount += r.total_price;
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${r.customer_name}</td>
-                      <td>${r.movement_type}</td>
-                      <td>${r.date}</td>
-                      <td>${r.style||''}</td>
-                      <td>${r.base_color||''}</td>
-                      <td>${r.pattern||''}</td>
-                      <td>${r.size||''}</td>
-                      <td>${r.quantity}</td>
-                      <td>${r.unit_price}</td>
-                      <td>${r.total_price}</td>
-                      <td>${r.note||''}</td>`;
+      tr.classList.add("border-b", "hover:bg-gray-50", "text-sm");
+      tr.innerHTML = `
+        <td class="px-3 py-2 text-center">
+          <input type="checkbox" class="select-row cursor-pointer" data-id="${r.id}" />
+        </td>
+        <td class="px-3 py-2">${r.customer_name}</td>
+        <td class="px-3 py-2">${r.movement_type}</td>
+        <td class="px-3 py-2">${r.date}</td>
+        <td class="px-3 py-2">${r.style || ''}</td>
+        <td class="px-3 py-2">${r.base_color || ''}</td>
+        <td class="px-3 py-2">${r.pattern || ''}</td>
+        <td class="px-3 py-2">${r.size || ''}</td>
+        <td class="px-3 py-2 text-right">${r.quantity}</td>
+        <td class="px-3 py-2 text-right">${r.unit_price}</td>
+        <td class="px-3 py-2 text-right">${r.total_price}</td>
+        <td class="px-3 py-2">${r.note || ''}</td>
+        <td class="px-3 py-2 text-center">
+          <button class="edit-btn text-blue-600 hover:underline" data-id="${r.id}">编辑</button>
+          <button class="delete-btn text-red-600 hover:underline ml-2" data-id="${r.id}">删除</button>
+        </td>
+      `;
       tbody.appendChild(tr);
     });
 
@@ -606,6 +658,66 @@ function mainReport() {
     totalAmountEl.textContent = totalAmount.toFixed(2);
     reportSummary.classList.remove("hidden");
     table.classList.remove("hidden");
+
+    // ✅ 行复选框逻辑
+    const selectAll = document.getElementById("selectAll");
+    const rowCheckboxes = tbody.querySelectorAll(".select-row");
+
+    selectAll.addEventListener("change", e => {
+      rowCheckboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+        if (cb.checked) selectedIds.add(cb.dataset.id);
+        else selectedIds.delete(cb.dataset.id);
+      });
+    });
+
+    rowCheckboxes.forEach(cb => {
+      cb.addEventListener("change", e => {
+        const id = e.target.dataset.id;
+        if (e.target.checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+      });
+    });
+
+    // ✅ 编辑按钮逻辑
+    tbody.querySelectorAll(".edit-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const pwd = prompt("请输入密码进行编辑：");
+        if (pwd !== PASSWORD) return alert("密码错误");
+        openEditModal(e.target.dataset.id, reportData, generateReport);
+      });
+    });
+
+    // ✅ 单条删除按钮逻辑
+    tbody.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async e => {
+        const pwd = prompt("请输入密码进行删除：");
+        if (pwd !== PASSWORD) return alert("密码错误");
+        await deleteRecord(e.target.dataset.id, generateReport);
+      });
+    });
+  }
+
+  // ✅ 批量删除功能
+  if (batchDeleteBtn) {
+    batchDeleteBtn.addEventListener("click", async () => {
+      if (selectedIds.size === 0) return alert("请先选择要删除的记录！");
+      const pwd = prompt("请输入密码进行批量删除：");
+      if (pwd !== PASSWORD) return alert("密码错误");
+
+      if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
+
+      const { error } = await supabaseClient
+        .from('inventory_movements')
+        .delete()
+        .in('id', Array.from(selectedIds));
+
+      if (error) { alert("批量删除失败"); console.error(error); return; }
+      alert("批量删除成功！");
+      selectedIds.clear();
+      await generateReport();
+      if (loadOptionsFunc) loadOptionsFunc();
+    });
   }
 
   form.addEventListener("submit", e => {
