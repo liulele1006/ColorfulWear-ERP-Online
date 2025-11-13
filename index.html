@@ -413,14 +413,27 @@
         const {error} = await supabaseClient.from('inventory_movements').insert([record]);
         if(error){alert("保存失败");console.error(error);return;}
         alert("记录保存成功！");
-        form.reset(); totalPriceInput.value="";
-        if(fetchRecords) fetchRecords();
-        if(loadOptionsFunc) loadOptionsFunc();
-        if(refreshReportFunc) refreshReportFunc();
+       form.reset(); totalPriceInput.value="";
+       if(fetchRecords) fetchRecords();
+       if(refreshReportFunc) refreshReportFunc();
+
+       // 新增：保存后重新加载下拉菜单
+       initializeDatalists();
       });
     }
 
-  
+/****************************
+ * 加载下拉菜单主函数
+ ****************************/
+  function initializeDatalists() {
+  loadDatalistOptions('customer_name', 'customer_name', 'customerNameOptions');
+  loadDatalistOptions('style', 'style', 'styleOptions');
+  loadDatalistOptions('base_color', 'base_color', 'baseColorOptions');
+  loadDatalistOptions('pattern', 'pattern', 'patternOptions');
+  loadDatalistOptions('size', 'size', 'sizeOptions');
+  loadDatalistOptions('note', 'note', 'noteOptions');
+}
+
 /****************************
  * 库存记录主函数
  ****************************/
@@ -932,6 +945,7 @@ document.getElementById("importCSVBtn").addEventListener("click", async () => {
     window.onload = ()=>{
       const fetchRecords = mainInventoryRecords(); // 初始化库存表格
       mainInventoryForm(fetchRecords);            // 初始化新增表单
+      initializeDatalists();   // 初始化下拉菜单
       mainReport();                               // 初始化报表
       mainExportModule();                         // 初始化导出功能
     }
