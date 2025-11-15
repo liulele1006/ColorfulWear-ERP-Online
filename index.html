@@ -18,7 +18,7 @@
       transition: all 0.25s ease-in-out;
     }
 
-    #recordsTable tbody tr:hover,
+   
     #reportTable tbody tr:hover {
       background-color: #e0f2fe; 
       box-shadow: 0 4px 16px rgba(37, 99, 235, 0.6); 
@@ -204,21 +204,13 @@
 
     <div class="mt-10 bg-gradient-to-r from-yellow-400 via-red-400 to-green-400 h-6 w-full rounded-lg shadow-md"></div> <!-- 色块隔离线，定制间距和高度 -->
 
-    <!-- 库存记录表格 -->
-    <section class="mt-10" id="inventoryRecordsSection">
-      <h2 class="text-2xl font-semibold text-blue-600">库存记录</h2>
+    <!--更新数据 -->
+    <section class="mt-10">
+      <h2 class="text-2xl font-semibold text-blue-600">更新数据</h2>
       
-      <div class="table-scroll-container mt-6">       <!-- 将库存记录表格放到固定容器内div -->
-        <table id="recordsTable" class="w-full table-auto bg-white shadow-md rounded-md text-center">
-          <thead class="bg-blue-600 text-white">
-            <tr>
-              <th class="text-center">客户名称</th><th class="text-center">进出货</th><th class="text-center">日期</th><th class="text-center">版型</th><th class="text-center">底版颜色</th>
-              <th class="text-center">花型</th><th class="text-center">码数</th><th class="text-center">数量</th><th class="text-center">单价</th><th class="text-center">总价</th><th class="text-center">备注</th><th class="text-center">操作</th>
-            </tr>
-          </thead>
-          <tbody class="text-center"></tbody>
-        </table>
-      </div>
+        <table id="recordsTable">
+          
+    </section>
 
 
       <!-- 导入现有数据按钮区域 -->
@@ -230,8 +222,6 @@
         </button>
         <p id="importStatus" class="text-sm mt-2 text-gray-600"></p>
       </div>
-
-
       <!-- 导入 CSV 弹窗（放在 body 里任意位置） -->
       <div id="importDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white p-6 rounded-lg w-11/12 max-w-4xl max-h-[80vh] overflow-y-auto relative">
@@ -242,20 +232,6 @@
           </div>
         </div>
       </div>
-
-      
-      <!-- 阴影容器 -->
-      <div class="p-4 bg-gray-100 rounded-lg shadow-md mt-4">
-        <!-- 导出所有数据CSV 按钮 -->
-        <button id="exportCSVBtn"
-                class="px-4 py-2 bg-green-600 text-white rounded-md
-                       hover:bg-green-700
-                       focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
-                       transition-colors duration-200">
-           导出所有数据CSV
-         </button>
-       </div>
-      
     <!-- 编辑记录弹窗 -->
     <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
       <div class="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto relative">
@@ -315,7 +291,6 @@
             <input list="noteOptionsEdit" type="text" id="edit_note" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <datalist id="noteOptionsEdit"></datalist>
           </div>
-
           <!-- 弹窗底部按钮：取消 / 更新 -->
           <div class="flex justify-end mt-4 sticky bottom-0 bg-white py-2">
             <button type="button" id="cancelEdit" class="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">取消</button>
@@ -324,7 +299,6 @@
         </form>
       </div>
     </div>
-
   </main>
 
   <script>
