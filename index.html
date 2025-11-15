@@ -12,8 +12,8 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-    /* ==== 鼠标悬停阴影效果（库存记录 + 统计报表通用）==== */
-    #recordsTable tbody tr,
+    /* ==== 鼠标悬停阴影效果（ 统计报表）==== */
+    
     #reportTable tbody tr {
       transition: all 0.25s ease-in-out;
     }
@@ -207,15 +207,12 @@
     <!--更新数据 -->
     <section class="mt-10">
       <h2 class="text-2xl font-semibold text-blue-600">更新数据</h2>
-      
-        <table id="recordsTable">
-          
     </section>
 
 
       <!-- 导入现有数据按钮区域 -->
       <div class="p-4 bg-gray-100 rounded-lg shadow-md mt-4">
-        <label class="block text-sm font-medium mb-2">导入现有数据（CSV）</label>
+        <label class="block text-sm font-medium mb-2">导入现有数据xls/xlsx</label>
         <input type="file" id="importFileInput" accept=".csv" class="mb-3 block">
         <button id="importCSVBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none">
           导入到 Supabase
@@ -310,10 +307,11 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentEditId = null;      // 当前编辑的记录 ID
-    let currentData = [];          // 当前库存记录数据
     let loadOptionsFunc = null;    // 动态加载下拉选项函数引用
     let refreshReportFunc = null;  // 刷新报表函数引用
     const PASSWORD = "106614";     // 编辑/删除密码
+
+
 
     /****************************
      * 动态加载 datalist 下拉选项（取最后 10 条记录）
@@ -349,10 +347,22 @@
       }
     }
 
+/****************************
+ * 加载下拉菜单主函数
+ ****************************/
+  function initializeDatalists() {
+  loadDatalistOptions('customer_name', 'customer_name', 'customerNameOptions');
+  loadDatalistOptions('style', 'style', 'styleOptions');
+  loadDatalistOptions('base_color', 'base_color', 'baseColorOptions');
+  loadDatalistOptions('pattern', 'pattern', 'patternOptions');
+  loadDatalistOptions('size', 'size', 'sizeOptions');
+  loadDatalistOptions('note', 'note', 'noteOptions');
+}
+
     /****************************
      * 新增进出货记录表单逻辑
      ****************************/
-    function mainInventoryForm(fetchRecords) {
+    function mainInventoryForm() {
       const form = document.getElementById("entryForm");
       const quantityInput = document.getElementById("quantity");
       const unitPriceInput = document.getElementById("unit_price");
@@ -390,81 +400,13 @@
         if(error){alert("保存失败");console.error(error);return;}
         alert("记录保存成功！");
        form.reset(); totalPriceInput.value="";
-       if(fetchRecords) fetchRecords();
+     
        if(refreshReportFunc) refreshReportFunc();
 
        // 新增：保存后重新加载下拉菜单
        initializeDatalists();
       });
     }
-
-/****************************
- * 加载下拉菜单主函数
- ****************************/
-  function initializeDatalists() {
-  loadDatalistOptions('customer_name', 'customer_name', 'customerNameOptions');
-  loadDatalistOptions('style', 'style', 'styleOptions');
-  loadDatalistOptions('base_color', 'base_color', 'baseColorOptions');
-  loadDatalistOptions('pattern', 'pattern', 'patternOptions');
-  loadDatalistOptions('size', 'size', 'sizeOptions');
-  loadDatalistOptions('note', 'note', 'noteOptions');
-}
-
-/****************************
- * 库存记录主函数
- ****************************/
-function mainInventoryRecords() {
-  const recordsTable = document.getElementById("recordsTable").querySelector("tbody");
-
-  async function fetchRecords() {
-    const { data, error } = await supabaseClient
-      .from('inventory_movements')
-      .select('*')
-      .order('date', { ascending: false });
-    if (error) { console.error(error); return; }
-
-    currentData = data;
-    recordsTable.innerHTML = "";
-    data.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.customer_name}</td><td>${r.movement_type}</td><td>${r.date}</td>
-        <td>${r.style || ''}</td><td>${r.base_color || ''}</td><td>${r.pattern || ''}</td>
-        <td>${r.size || ''}</td><td>${r.quantity}</td><td>${r.unit_price}</td>
-        <td>${r.total_price}</td><td>${r.note || ''}</td>
-        <td>
-          <button class="edit-btn text-blue-500" data-id="${r.id}">编辑</button>
-          <button class="delete-btn text-red-500 ml-2" data-id="${r.id}">删除</button>
-        </td>`;
-      recordsTable.appendChild(tr);
-    });
-
-    // 绑定外部编辑与删除函数
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', e => handleEditClick(e.target.dataset.id));
-    });
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', e => handleDeleteClick(e.target.dataset.id));
-    });
-  }
-
-  // 点击事件封装
-  function handleEditClick(id) {
-    const pwd = prompt("请输入密码进行编辑：");
-    if (pwd !== PASSWORD) { alert("密码错误"); return; }
-    openEditModal(id, currentData, fetchRecords); // 调用外部函数
-  }
-
-  function handleDeleteClick(id) {
-    const pwd = prompt("请输入密码进行删除：");
-    if (pwd !== PASSWORD) { alert("密码错误"); return; }
-    deleteRecord(id, fetchRecords); // 调用外部函数
-  }
-
-  fetchRecords();
-  return fetchRecords;
-}
-
 
 /****************************
  * 独立删除函数
@@ -548,9 +490,6 @@ function openEditModal(id, currentData, refreshFunc) {
   };
 }
 
-
-
-
 /****************************
  * 报表统计逻辑（支持批量删除）
  ****************************/
@@ -586,7 +525,6 @@ loadOptionsFunc = async () => {
   reportCustomerInput.value = "";
 };
 loadOptionsFunc();
-
 
   /****************************
    * 生成报表
@@ -789,7 +727,7 @@ loadOptionsFunc();
         ];
       });
 
-      const summaryRow = ["", "", "", "", "", "", "总件数：", totalQuantity, "总金额：", totalAmount, ""];
+      const summaryRow = ["", "", "", "", "", "", "#总件数：", totalQuantity, "#总金额：", totalAmount, ""];
       const worksheetData = [headers, ...rows, [], summaryRow];
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
@@ -865,62 +803,79 @@ loadOptionsFunc();
 
 
 
-
-
-
-
-
-
-
 /****************************
- * 导入 CSV 数据到 Supabase
+ * 导入 XLS/XLSX 数据到 Supabase
+ * 自动跳过 # 开头的数据行
+ * 判断重复记录使用所有 11 个字段
+ * 日期列统一为 YYYY-MM-DD
  ****************************/
-// 替换你原来的 CSV 导入完成逻辑
 document.getElementById("importCSVBtn").addEventListener("click", async () => {
   const fileInput = document.getElementById("importFileInput");
   const statusEl = document.getElementById("importStatus");
   const file = fileInput.files[0];
 
-  if (!file) { alert("请先选择一个 CSV 文件！"); return; }
+  if (!file) { 
+    alert("请先选择一个 Excel 文件（支持 .xls / .xlsx）！");
+    return;
+  }
 
-  statusEl.textContent = "⏳ 正在读取文件，请稍候...";
+  const fileName = file.name.toLowerCase();
+  if (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls")) {
+    alert("文件格式错误！请选择 xls 或 xlsx 格式。");
+    return;
+  }
 
-  const text = await file.text();
-  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
-  const headers = ["customer_name","movement_type","date","style","base_color","pattern","size","quantity","unit_price","total_price","note"];
-  
+  statusEl.textContent = "⏳ 正在读取 Excel 文件，请稍候...";
+
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+
+  const headers = [
+    "customer_name","movement_type","date","style","base_color",
+    "pattern","size","quantity","unit_price","total_price","note"
+  ];
+
   let insertedCount = 0;
   let updatedCount = 0;
   let insertedList = [];
   let updatedList = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(",").map(c => c.replace(/^"|"$/g, "").trim());
-    if (cols.length < headers.length) continue;
+  for (let i = 1; i < rows.length; i++) {
+    const cols = rows[i];
+    if (!cols || cols.length === 0) continue;
+
+    if (String(cols[0] ?? "").trim().startsWith("#")) continue;
 
     const record = {};
-    headers.forEach((h, idx) => record[h] = cols[idx]);
+    headers.forEach((h, idx) => record[h] = (cols[idx] ?? "").toString().trim());
+
+    // 日期列统一为 YYYY-MM-DD
+    if (record.date) {
+      const parsedDate = new Date(record.date);
+      if (!isNaN(parsedDate)) {
+        record.date = parsedDate.toISOString().split('T')[0];
+      } else {
+        record.date = null;
+      }
+    }
 
     record.quantity = Number(record.quantity) || 0;
     record.unit_price = Number(record.unit_price) || 0;
     record.total_price = Number(record.total_price) || 0;
 
-    const { data: existing, error: checkError } = await supabaseClient
-      .from("inventory_movements")
-      .select("id")
-      .eq("customer_name", record.customer_name)
-      .eq("movement_type", record.movement_type)
-      .eq("date", record.date)
-      .eq("style", record.style)
-      .eq("base_color", record.base_color)
-      .eq("pattern", record.pattern)
-      .eq("size", record.size)
-      .eq("quantity", record.quantity)
-      .eq("unit_price", record.unit_price)
-      .eq("total_price", record.total_price)
-      .eq("note", record.note);
+    // 判断重复：使用所有 11 个字段
+    let query = supabaseClient.from("inventory_movements").select("id");
+    headers.forEach(h => {
+      query = query.eq(h, record[h]);
+    });
 
-    if (checkError) { console.error(checkError); continue; }
+    const { data: existing, error: checkError } = await query;
+    if (checkError) { 
+      console.error(checkError); 
+      continue; 
+    }
 
     if (existing.length > 0) {
       const { error: updateError } = await supabaseClient
@@ -942,83 +897,48 @@ document.getElementById("importCSVBtn").addEventListener("click", async () => {
 
   statusEl.textContent = `✅ 导入完成：新增 ${insertedCount} 条，更新 ${updatedCount} 条`;
 
-  // 弹出明细窗口
+  // 显示明细弹窗
   const modal = document.getElementById("importDetailModal");
   const content = document.getElementById("importDetailContent");
   content.innerHTML = "";
 
-  if (insertedList.length > 0) {
-    const insDiv = document.createElement("div");
-    insDiv.innerHTML = `<h3 class="font-bold text-blue-600">新增记录 (${insertedList.length})</h3>`;
-    const insTable = document.createElement("table");
-    insTable.className = "w-full table-auto border border-gray-300";
-    insTable.innerHTML = `
+  function buildTable(title, list, color) {
+    if (list.length === 0) return;
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `<h3 class="font-bold ${color} mt-4">${title} (${list.length})</h3>`;
+    const table = document.createElement("table");
+    table.className = "w-full table-auto border border-gray-300";
+    table.innerHTML = `
       <thead class="bg-gray-200">
-        <tr>${headers.map(h=>`<th class="border px-2 py-1">${h}</th>`).join("")}</tr>
+        <tr>${headers.map(h => `<th class="border px-2 py-1 break-words whitespace-normal">${h}</th>`).join("")}</tr>
       </thead>
       <tbody>
-        ${insertedList.map(r=>`<tr>${headers.map(h=>`<td class="border px-2 py-1">${r[h]||""}</td>`).join("")}</tr>`).join("")}
-      </tbody>`;
-    insDiv.appendChild(insTable);
-    content.appendChild(insDiv);
+        ${list.map(r => `<tr>${headers.map(h => `<td class="border px-2 py-1 break-words whitespace-normal">${r[h] || ""}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+    `;
+    wrapper.appendChild(table);
+    content.appendChild(wrapper);
   }
 
-  if (updatedList.length > 0) {
-    const updDiv = document.createElement("div");
-    updDiv.innerHTML = `<h3 class="font-bold text-green-600 mt-4">更新记录 (${updatedList.length})</h3>`;
-    const updTable = document.createElement("table");
-    updTable.className = "w-full table-auto border border-gray-300";
-    updTable.innerHTML = `
-      <thead class="bg-gray-200">
-        <tr>${headers.map(h=>`<th class="border px-2 py-1">${h}</th>`).join("")}</tr>
-      </thead>
-      <tbody>
-        ${updatedList.map(r=>`<tr>${headers.map(h=>`<td class="border px-2 py-1">${r[h]||""}</td>`).join("")}</tr>`).join("")}
-      </tbody>`;
-    updDiv.appendChild(updTable);
-    content.appendChild(updDiv);
-  }
+  buildTable("新增记录", insertedList, "text-blue-600");
+  buildTable("更新记录", updatedList, "text-green-600");
 
   modal.classList.remove("hidden");
-
   document.getElementById("closeImportDetail").addEventListener("click", () => {
     modal.classList.add("hidden");
   });
 });
 
-    
-    
-    /****************************
-     * 导出 CSV 逻辑
-     ****************************/
-    function mainExportModule(){
-      document.getElementById("exportCSVBtn").addEventListener("click",()=>{
-        const rows = currentData;
-        if(!rows || rows.length===0){alert("无数据可导出");return;}
-        let csv = "客户名称,进出货,日期,版型,底版颜色,花型,码数,数量,单价,总价,备注\n";
-        rows.forEach(r=>{
-          csv+=`${r.customer_name},${r.movement_type},${r.date},${r.style||''},${r.base_color||''},${r.pattern||''},${r.size||''},${r.quantity},${r.unit_price},${r.total_price},${r.note||''}\n`;
-        });
-        const blob = new Blob([csv],{type:"text/csv"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download="inventory.csv";
-        a.click();
-        URL.revokeObjectURL(url);
-      });
-    }
+
 
     /****************************
      * 页面加载入口
      ****************************/
     window.onload = ()=>{
-      const fetchRecords = mainInventoryRecords(); // 初始化库存表格
-      mainInventoryForm(fetchRecords);            // 初始化新增表单
+      mainInventoryForm();            // 初始化新增表单
       initializeDatalists();   // 初始化下拉菜单
       mainReport();                               // 初始化报表
-      mainExportModule();                         // 初始化导出功能
-    }
+      }
   </script>
 
 </body>
