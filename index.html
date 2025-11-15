@@ -8,6 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- 引入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+<!-- 引入引入库（CDN 方式）用于导出xlsx标准文件 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     /* ==== 鼠标悬停阴影效果（库存记录 + 统计报表通用）==== */
@@ -188,7 +190,7 @@
       <!-- 新增导出报表按钮 -->
         <button id="exportReportBtn"
               class="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-        导出报表数据CSV
+        导出报表数据xlsx
        </button>
 
 <button id="batchDeleteBtn" 
@@ -573,6 +575,8 @@ function openEditModal(id, currentData, refreshFunc) {
 }
 
 
+
+
 /****************************
  * 报表统计逻辑（支持批量删除）
  ****************************/
@@ -588,13 +592,31 @@ function mainReport() {
   let reportData = []; // 当前报表数据
   let selectedIds = new Set(); // ✅ 存储选中行 ID
 
-  // 初始化 datalist
-  loadOptionsFunc = async () => {
-    await loadDatalistOptions('customer_name', 'reportCustomer', 'customerOptions');
-  };
-  loadOptionsFunc();
+/****************************
+ * 初始化 datalist（固定“所有客户”首位）
+ ****************************/
+loadOptionsFunc = async () => {
+  await loadDatalistOptions('customer_name', 'reportCustomer', 'customerOptions');
 
-  // ✅ 生成报表
+  const datalist = document.getElementById('customerOptions');
+  // 移除已有“所有客户”，避免重复
+  Array.from(datalist.options).forEach(opt => {
+    if (opt.value === "所有客户") datalist.removeChild(opt);
+  });
+  // 创建“所有客户”选项并插入首位
+  const allOption = document.createElement("option");
+  allOption.value = "所有客户";
+  datalist.insertBefore(allOption, datalist.firstChild);
+
+  // ✅ 客户筛选输入框默认为空字符
+  reportCustomerInput.value = "";
+};
+loadOptionsFunc();
+
+
+  /****************************
+   * 生成报表
+   ****************************/
   async function generateReport() {
     const start = document.getElementById("reportStartDate").value;
     const end = document.getElementById("reportEndDate").value;
@@ -604,9 +626,13 @@ function mainReport() {
     if (start) query = query.gte('date', start);
     if (end) query = query.lte('date', end);
 
-    if (customerFilter === "") query = query.eq('customer_name', '');
-    else if (customerFilter.toLowerCase() !== "所有客户")
+    // ✅ 客户筛选逻辑
+    if (customerFilter === "") {
+      query = query.eq('customer_name', '');
+    } else if (customerFilter.toLowerCase() !== "所有客户") {
       query = query.ilike('customer_name', `%${customerFilter}%`);
+    }
+    // 如果 customerFilter 为 "所有客户"，则不过滤客户，显示所有数据
 
     const { data, error } = await query.order('date', { ascending: false });
     if (error) return console.error(error);
@@ -616,7 +642,7 @@ function mainReport() {
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = "";
 
-    // ✅ 表头样式调整 + 全选框
+    // ✅ 表头
     thead.innerHTML = `
       <tr class="bg-gray-200 text-gray-800 text-base font-semibold">
         <th class="px-3 py-2 text-center">
@@ -640,24 +666,28 @@ function mainReport() {
     // ✅ 表体渲染
     let totalQuantity = 0, totalAmount = 0;
     data.forEach(r => {
-      totalQuantity += r.quantity;
-      totalAmount += r.total_price;
+      const quantity = parseFloat(r.quantity) || 0;
+      const unitPrice = parseFloat(r.unit_price) || 0;
+      const totalPrice = parseFloat(r.total_price) || (quantity * unitPrice);
+      totalQuantity += quantity;
+      totalAmount += totalPrice;
+
       const tr = document.createElement("tr");
       tr.classList.add("border-b", "hover:bg-gray-50", "text-sm");
       tr.innerHTML = `
         <td class="px-3 py-2 text-center">
           <input type="checkbox" class="select-row cursor-pointer" data-id="${r.id}" />
         </td>
-        <td class="px-3 py-2">${r.customer_name}</td>
-        <td class="px-3 py-2">${r.movement_type}</td>
-        <td class="px-3 py-2">${r.date}</td>
+        <td class="px-3 py-2">${r.customer_name || ''}</td>
+        <td class="px-3 py-2">${r.movement_type || ''}</td>
+        <td class="px-3 py-2">${r.date || ''}</td>
         <td class="px-3 py-2">${r.style || ''}</td>
         <td class="px-3 py-2">${r.base_color || ''}</td>
         <td class="px-3 py-2">${r.pattern || ''}</td>
         <td class="px-3 py-2">${r.size || ''}</td>
-        <td class="px-3 py-2 text-right">${r.quantity}</td>
-        <td class="px-3 py-2 text-right">${r.unit_price}</td>
-        <td class="px-3 py-2 text-right">${r.total_price}</td>
+        <td class="px-3 py-2 text-right">${quantity}</td>
+        <td class="px-3 py-2 text-right">${unitPrice}</td>
+        <td class="px-3 py-2 text-right">${totalPrice}</td>
         <td class="px-3 py-2">${r.note || ''}</td>
         <td class="px-3 py-2 text-center">
           <button class="edit-btn text-blue-600 hover:underline" data-id="${r.id}">编辑</button>
@@ -692,7 +722,7 @@ function mainReport() {
       });
     });
 
-    // ✅ 编辑按钮逻辑
+    // ✅ 编辑按钮
     tbody.querySelectorAll(".edit-btn").forEach(btn => {
       btn.addEventListener("click", e => {
         const pwd = prompt("请输入密码进行编辑：");
@@ -701,7 +731,7 @@ function mainReport() {
       });
     });
 
-    // ✅ 单条删除按钮逻辑
+    // ✅ 单条删除按钮
     tbody.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", async e => {
         const pwd = prompt("请输入密码进行删除：");
@@ -711,7 +741,9 @@ function mainReport() {
     });
   }
 
-  // ✅ 批量删除功能
+  /****************************
+   * 批量删除
+   ****************************/
   if (batchDeleteBtn) {
     batchDeleteBtn.addEventListener("click", async () => {
       if (selectedIds.size === 0) return alert("请先选择要删除的记录！");
@@ -733,73 +765,137 @@ function mainReport() {
     });
   }
 
+  /****************************
+   * 表单提交生成报表
+   ****************************/
   form.addEventListener("submit", e => {
     e.preventDefault();
     generateReport();
   });
 
+  /****************************
+   * 导出 XLSX（样式 + 边框 + 汇总高亮）
+   ****************************/
+  const exportBtn = document.getElementById("exportReportBtn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      if (reportData.length === 0) {
+        alert("没有可导出的数据，请先生成报表！");
+        return;
+      }
 
-  // ✅ 导出报表按钮监听（放在 return 之前）
-const exportBtn = document.getElementById("exportReportBtn");
-if (exportBtn) {
-  exportBtn.addEventListener("click", () => {
-    if (reportData.length === 0) {
-      alert("没有可导出的数据，请先生成报表！");
-      return;
-    }
+      const sortedData = [...reportData].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // ✅ 按日期正序排序
-    const sortedData = [...reportData].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    const headers = [
-      "客户名称", "进出货", "日期", "版型", "底版颜色",
-      "花型", "码数", "数量", "单价", "总价", "备注"
-    ];
-
-    let totalQuantity = 0;
-    let totalAmount = 0;
-
-    const rows = sortedData.map(item => {
-      totalQuantity += item.quantity || 0;
-      totalAmount += item.total_price || 0;
-      return [
-        item.customer_name || "",
-        item.movement_type || "",
-        item.date || "",
-        item.style || "",
-        item.base_color || "",
-        item.pattern || "",
-        item.size || "",
-        item.quantity || 0,
-        item.unit_price || 0,
-        item.total_price || 0,
-        item.note || ""
+      const headers = [
+        "客户名称", "进出货", "日期", "版型", "底版颜色",
+        "花型", "码数", "数量", "单价", "总价", "备注"
       ];
+
+      let totalQuantity = 0;
+      let totalAmount = 0;
+
+      const rows = sortedData.map(item => {
+        const quantity = parseFloat(item.quantity) || 0;
+        const unitPrice = parseFloat(item.unit_price) || 0;
+        const totalPrice = parseFloat(item.total_price) || (quantity * unitPrice);
+        totalQuantity += quantity;
+        totalAmount += totalPrice;
+        return [
+          item.customer_name || "",
+          item.movement_type || "",
+          item.date || "",
+          item.style || "",
+          item.base_color || "",
+          item.pattern || "",
+          item.size || "",
+          quantity,
+          unitPrice,
+          totalPrice,
+          item.note || ""
+        ];
+      });
+
+      const summaryRow = ["", "", "", "", "", "", "总件数：", totalQuantity, "总金额：", totalAmount, ""];
+      const worksheetData = [headers, ...rows, [], summaryRow];
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+      // 自动列宽
+      const colWidths = headers.map((h, i) => {
+        const maxLen = Math.max(
+          h.length,
+          ...rows.map(r => String(r[i] ?? "").length)
+        );
+        return { wch: Math.max(10, maxLen + 2) };
+      });
+      worksheet["!cols"] = colWidths;
+
+      // 样式、边框、汇总高亮
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      const numericCols = [7, 8, 9];
+      const totalRowIndex = worksheetData.length - 1;
+
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = worksheet[cellRef];
+          if (!cell) continue;
+
+          cell.s = {
+            border: {
+              top: { style: "thin", color: { rgb: "999999" } },
+              bottom: { style: "thin", color: { rgb: "999999" } },
+              left: { style: "thin", color: { rgb: "999999" } },
+              right: { style: "thin", color: { rgb: "999999" } },
+            },
+            alignment: {
+              vertical: "center",
+              horizontal: numericCols.includes(C) ? "right" : "center",
+            },
+          };
+
+          if (R === 0) { // 表头
+            cell.s.fill = { patternType: "solid", fgColor: { rgb: "E0E0E0" } };
+            cell.s.font = { bold: true, color: { rgb: "000000" } };
+          }
+
+          if (R === totalRowIndex) { // 汇总行
+            cell.s.fill = { patternType: "solid", fgColor: { rgb: "FFF9C4" } };
+            cell.s.font = { bold: true, color: { rgb: "000000" } };
+          }
+
+          if (R > 0 && numericCols.includes(C) && typeof cell.v === "number") {
+            cell.t = "n";
+            cell.z = "0.00";
+          }
+        }
+      }
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "报表数据");
+      const dateStr = new Date().toISOString().split("T")[0];
+      const filename = `导出报表数据_${dateStr}.xlsx`;
+
+      try {
+        XLSX.writeFile(workbook, filename, { cellStyles: true });
+      } catch (err) {
+        console.warn("当前 XLSX 库版本不支持样式，将使用基础导出。");
+        XLSX.writeFile(workbook, filename);
+      }
     });
+  }
 
-    // 拼接 CSV 内容
-    let csvContent = [
-      headers.join(","),
-      ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    ].join("\n");
-
-    // ✅ 在 CSV 最后一行追加总数量和总金额（优化格式）
-    csvContent += `\n总数量: ${totalQuantity}件；总金额: ${totalAmount.toFixed(2)}元`;
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const dateStr = new Date().toISOString().split("T")[0];
-    link.href = URL.createObjectURL(blob);
-    link.download = `导出报表数据_${dateStr}.csv`;
-    link.click();
-  });
-}
-  
-  // 提供给外部调用刷新报表
+  // 外部调用刷新报表
   refreshReportFunc = generateReport;
-  // 返回 reportData 供导出 CSV 使用
   return { generateReport, reportData };
 }
+
+
+
+
+
+
+
+
 
 
 /****************************
